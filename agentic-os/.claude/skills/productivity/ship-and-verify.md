@@ -10,9 +10,19 @@ You are running the `productivity.ship-and-verify` skill. Your job is to commit 
 
 At the end you MUST output ONLY a single JSON object (no prose, no markdown fences) matching the schema at the bottom of this prompt.
 
+Result codes:
+- `nothing_to_ship` -- no staged changes found
+- `blocked_secret_leak` -- secret pattern detected; nothing committed or pushed
+- `push_failed` -- commit succeeded locally but git push failed (auth/network); smoke test never ran
+- `shipped_ok` -- pushed and all smoke checks passed
+- `shipped_but_pages_env_missing` -- pushed and deployed but Supabase env var not yet set in Cloudflare
+- `shipped_but_smoke_failed` -- pushed but homepage or API check returned unexpected result
+
 ---
 
 ## Step 1 -- Change directory and capture git status
+
+<!-- VAULT is re-declared in every bash block intentionally. Bash invocations do not persist CWD or env across separate tool calls, so each block must be self-contained. -->
 
 Run this in a single bash call:
 
@@ -54,9 +64,23 @@ Run this grep against the staged diff:
 ```bash
 VAULT="/Users/gabri/Library/Mobile Documents/com~apple~CloudDocs/agentic-os-vault"
 cd "$VAULT"
-# Exclude lines that are themselves grep command invocations (e.g. this pattern in SKILL.md docs)
-LEAK_PAT='AGENTIC_OS_API_KEY=[a-f0-9]{64}|SUPABASE_SERVICE_ROLE_KEY=eyJ|sbp_[a-z0-9]{36}|sk-ant-api[0-9]'
-git diff --cached | grep -v 'grep.*LEAK_PAT\|grep -iE.*eyJ\|LEAK_PAT=' | grep -iE "$LEAK_PAT" || true
+
+# LEAK_PAT covers:
+#   - Named project keys (AGENTIC_OS_API_KEY, SUPABASE_*, CLOUDFLARE_API_TOKEN) in any assignment format:
+#       KEY=value  KEY: value  "KEY": "value"  KEY = value  (the [[:space:]"=:]+ handles all)
+#     followed by a value prefix matching eyJ (JWT), 40+ hex chars, sbp_ (Supabase PAT), or cfut_ (Cloudflare user token)
+#   - cfut_ standalone: catches Cloudflare user tokens in any var name (e.g. CF_TOKEN=cfut_...)
+#   - Anthropic SDK keys: sk-ant-api<N>-
+#   - Stripe live/test keys: sk_(live|test)_<20+ alphanum>
+#   - GitHub PATs: ghp_<20+ alphanum+_> (real tokens are 36 chars after prefix; threshold 20 catches even slightly truncated ones)
+#     or github_pat_<60+ alphanum+_> (fine-grained PAT format)
+#   - AWS access key IDs: AKIA<16 uppercase alphanum>
+LEAK_PAT='(AGENTIC_OS_API_KEY|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_PERSONAL_ACCESS_TOKEN|CLOUDFLARE_API_TOKEN)[[:space:]"=:]+(eyJ|[a-f0-9]{40,}|sbp_[a-z0-9]{30,}|cfut_[a-zA-Z0-9_]{20,})|cfut_[a-zA-Z0-9_]{20,}|sk-ant-api[0-9]+-|sk_(live|test)_[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9_]{20,}|github_pat_[a-zA-Z0-9_]{60,}|AKIA[A-Z0-9]{16}'
+
+# Drop any added line (^+ prefix) that is itself a grep command invocation.
+# This suppresses grep command lines inside SKILL.md docs without blanket-dropping
+# lines that merely contain LEAK_PAT= (which would hide real secrets like +LEAK_PAT=sk-ant-api03-...).
+git diff --cached | grep -v '^+.*grep\b' | grep -iE "$LEAK_PAT" || true
 ```
 
 If the grep returns ANY matches:
@@ -89,9 +113,10 @@ COMMIT_MSG="auto: ship work-in-progress at $TS"
 git commit -m "$COMMIT_MSG"
 ```
 
-Capture the commit SHA:
+Capture the commit SHA (VAULT re-declared so this block is self-contained):
 
 ```bash
+VAULT="/Users/gabri/Library/Mobile Documents/com~apple~CloudDocs/agentic-os-vault"
 cd "$VAULT"
 git rev-parse HEAD
 ```
@@ -106,18 +131,14 @@ cd "$VAULT"
 git push origin main
 ```
 
-If push fails, return:
+If push fails, return immediately (nothing was shipped; smoke test never ran):
 
 ```json
 {
-  "result": "shipped_but_smoke_failed",
-  "commit_sha": "<sha>",
-  "files_changed": [...],
-  "smoke_test": {
-    "homepage": "broken",
-    "api_run": "broken",
-    "details": "git push failed: <error output>"
-  }
+  "result": "push_failed",
+  "commit_sha": "<commit_sha from git rev-parse HEAD>",
+  "files_changed": "<the staged file list captured in Step 2 as a JSON array of strings>",
+  "push_error": "<the stderr text from git push>"
 }
 ```
 
@@ -126,21 +147,34 @@ If push fails, return:
 ## Step 6 -- Wait for Cloudflare Pages redeploy
 
 ```bash
-sleep 90
+# Cloudflare Pages p90 deploy time is ~90s (as of 2026-05-11; revisit if false-negatives increase).
+# We use a 3x30s retry loop in Step 7 instead of a bare sleep here.
+# No sleep needed in this step.
+echo "push complete, proceeding to smoke test retry loop"
 ```
-
-Cloudflare Pages typically deploys within 60-90 seconds of a push. This wait gives it time before the smoke test.
 
 ---
 
 ## Step 7 -- Smoke test the deployed dashboard
 
-Run both checks:
-
 ### 7a. Homepage check
 
+Run the smoke test with a 3-attempt retry loop (30s gaps, 90s total -- covers p90 of Cloudflare Pages deploy variance):
+
 ```bash
-curl -sI https://agentic-os-40r.pages.dev/
+# p90 of Cloudflare Pages deploy time as of 2026-05-11; revisit if false-negatives increase.
+SMOKE_OK=""
+for attempt in 1 2 3; do
+  echo "[smoke attempt $attempt of 3] sleeping 30s before check..."
+  sleep 30
+  if curl -sI -m 10 'https://agentic-os-40r.pages.dev/' | head -1 | grep -q '200'; then
+    SMOKE_OK="homepage_ok"
+    break
+  fi
+done
+if [ -z "$SMOKE_OK" ]; then
+  echo "homepage smoke test failed after 3 attempts (90s total elapsed)"
+fi
 ```
 
 Parse the response:
@@ -183,7 +217,7 @@ No prose, no markdown fences. Raw JSON only:
 
 ```
 {
-  "result": "shipped_ok" | "shipped_but_pages_env_missing" | "shipped_but_smoke_failed" | "blocked_secret_leak" | "nothing_to_ship",
+  "result": "shipped_ok" | "shipped_but_pages_env_missing" | "shipped_but_smoke_failed" | "push_failed" | "blocked_secret_leak" | "nothing_to_ship",
   "commit_sha": "<40-char hex sha, or null if nothing was committed>",
   "files_changed": ["<relative path>", ...],
   "smoke_test": {
@@ -195,6 +229,7 @@ No prose, no markdown fences. Raw JSON only:
 ```
 
 For `nothing_to_ship` and `blocked_secret_leak` results, `commit_sha` is null, `files_changed` is [], and `smoke_test` can be omitted or null.
+For `push_failed`, `smoke_test` is omitted or null (push never succeeded so no deploy happened).
 
 ---
 
@@ -203,6 +238,6 @@ For `nothing_to_ship` and `blocked_secret_leak` results, `commit_sha` is null, `
 - Never echo or log the contents of `~/.agentic-os.env` or `credentials/.env`. The secret-leak grep in Step 3 is the only guard needed.
 - Never skip Step 3. Even if the caller is trusted, the grep runs every time.
 - Always `cd "$VAULT"` at the start of each bash block. The working directory does not persist between calls.
-- If git push succeeds but curl to pages.dev times out entirely, treat homepage as "broken" and return `shipped_but_smoke_failed`.
+- If git push succeeds but curl to pages.dev times out entirely after all 3 retry attempts, treat homepage as "broken" and return `shipped_but_smoke_failed`.
 - The `shipped_but_pages_env_missing` result is NOT a failure of this skill. It means the deploy succeeded but the Phase 2.1 Supabase env var is not yet set in Cloudflare. Report it clearly and do not retry.
 - Return ONLY the raw JSON object as your final output. No other text.
