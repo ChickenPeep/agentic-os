@@ -76,14 +76,55 @@ Phase 3 → GROWTH & BUSINESS skills (can also happen earlier — independent)
 
 ---
 
-## ▶️ NEXT SESSION (laptop) — pick A, B, or C
+## ▶️ NEXT SESSION — pick A (2 manual steps to finish 2.1) or B
 
-**A. Phase 2.1 polish (~1-2 hrs, agent-driven, code changes)**
-- Add `prompt` column to Supabase `skills` table. Populate for the 3 existing MEMORY skills.
-- Update `agentic-os/dashboard/app/api/run/route.ts` to fetch prompt from Supabase by slug (removes the hardcoded echo-test special case).
-- Convert `/api/run` to fire-and-forget pattern: insert `runs` row with `status='running'` → return `{run_id, status:"queued"}` immediately → n8n updates row to `success`/`failure` on completion → dashboard polls Supabase or uses realtime subscription.
-- Outcome: ALL skills work from the deployed dashboard Run button (not just echo-test), AND skills can run longer than Cloudflare's 30s edge timeout.
-- Files to touch: `dashboard/app/api/run/route.ts`, `dashboard/app/components/SkillCard.tsx` (polling logic), maybe a new `dashboard/app/api/run/[run_id]/route.ts` for status polling. SQL: `alter table skills add column prompt text;` via Supabase UI or Management API.
+**A. Finish Phase 2.1 (2 manual steps — SHIPPED by Mac agent session 2026-05-11, 2 blockers remain)**
+
+Phase 2.1 code is LIVE (commit `bb16050`, auto-deployed to Cloudflare Pages). The `/api/run` fire-and-forget pattern works, `/api/run/[run_id]` polling endpoint is live, SkillCard polls until completion. BUT 2 manual steps block full end-to-end from the dashboard:
+
+### Manual step 1 — Cloudflare Pages: add SUPABASE_SERVICE_ROLE_KEY (5 min, browser)
+
+The new `/api/run` reads `SUPABASE_SERVICE_ROLE_KEY` server-side. Without it, every dashboard Run click returns `{"error":"Supabase not configured"}`. The API token only has Workers Scripts scope (not Pages), so this must be done in the browser.
+
+1. Go to https://dash.cloudflare.com → Pages → `agentic-os` project
+2. Settings → Environment variables → Production
+3. Add variable: `SUPABASE_SERVICE_ROLE_KEY` (type: Secret) → paste the value from `~/.agentic-os.env`
+4. Also add to Preview environment (same value)
+5. Redeploy: go to Deployments → click "Retry deployment" on the latest build
+
+After this step, `/api/run` will return `{run_id, status: "queued", skill_slug}` immediately and polling will work.
+
+### Manual step 2 — n8n workflow: switch "Supabase: Insert Run" to "Supabase: Update Run" (10 min, n8n UI)
+
+The canonical workflow JSON is updated in `agentic-os/n8n-workflows/agentic-os-base.json` (commit `bb16050`). The live n8n instance still has the old Insert logic. Until this is updated, successful skill runs will try to INSERT a new row with `status=success` instead of UPDATEing the existing `status=running` row that the dashboard created. This means duplicate runs rows and the dashboard polled status won't update.
+
+In n8n UI at `http://localhost:5678` (or `http://100.91.142.86:5678` over Tailscale):
+
+1. Open the `agentic-os-base` workflow
+2. Find the node named **"Supabase: Insert Run"**
+3. Change operation from **Create** to **Update**
+4. In the Update node config:
+   - **Table**: `runs`
+   - **Filter** → Add condition: Column = `id`, Operator = `eq`, Value = `={{ $('Webhook').item.json.body.run_id }}`
+   - **Fields to update**:
+     - `ended_at` = `={{ $now.toISO() }}`
+     - `status` = `success`
+     - `output` = `={{ $json.output }}`
+5. Rename the node to **"Supabase: Update Run"**
+6. Save the workflow
+
+After both steps, run the full smoke test:
+```bash
+URL='https://agentic-os-40r.pages.dev'
+RUN_ID=$(curl -s -X POST "$URL/api/run" -H 'Content-Type: application/json' -d '{"skill_slug":"memory.echo-test"}' | jq -r '.run_id')
+echo "Run id: $RUN_ID"
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  STATUS=$(curl -s "$URL/api/run/$RUN_ID" | jq -r '.status')
+  echo "[$i] status=$STATUS"
+  if [ "$STATUS" = "success" ] || [ "$STATUS" = "failure" ]; then break; fi
+  sleep 3
+done
+```
 
 **B. Run the context dump session NOW (45-60 min, conversational with Claude)**
 - Invoke `memory.context-dump` skill OR just paste the SKILL.md prompt into a Claude Code session and run it manually.
