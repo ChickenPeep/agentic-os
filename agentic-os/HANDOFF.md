@@ -4,9 +4,118 @@ _Update this file at the end of every build session._
 
 ---
 
-## Last updated: 2026-05-11 (late-night session — Cloudflare deploy + GitHub push + dashboard live + summer scope reframe)
+## Last updated: 2026-05-11 (laptop handoff — Mac session ending mid-day; Gabe continuing on laptop. Vision captured: Telegram conversational interface + Task layer + Proactive outreach. See "🔮 Vision captured this session" below.)
 
-## Current phase: Phase 1 + 1.5 + 2 v1 SHIPPED. Vault on GitHub (private). Cloudflare Pages live at https://agentic-os-40r.pages.dev — `/api/run` end-to-end verified, homepage HTML verified after favicon fix landed. Pending: **Phase 2.1** (skills.prompt column + fire-and-forget /api/run), then **NEW context dump session** (per Summer Focus reframe), then **Phase 3** with the summer 4-domain scope.
+## Current phase: Phase 1 + 1.5 + 2 v1 SHIPPED. Domain restructure to 4 foundational OS domains SHIPPED (commit `8e43da5`, dashboard verified showing 4 columns live). `memory.context-dump` skill created (SKILL.md + Supabase row `6722d3ce-fb37-4c74-b53e-f29df6d5d43b`). Vault on GitHub (private). Cloudflare Pages live at https://agentic-os-40r.pages.dev. Pending: **Phase 2.1** (skills.prompt column + fire-and-forget /api/run) OR **context dump session** (`memory.context-dump`, 45-60 min) — either can run next.
+
+---
+
+## 🔮 Vision captured this session (2026-05-11) — forward-looking, NOT to build now
+
+Gabe surfaced these ideas mid-session. They've been integrated into `AGENTIC_OS_PLAN.md` as Phase 4 reframe + new Phase 5 + new Phase 6. **None of this is on the critical path right now** — the foundation (Phase 2.1 + context dump + Phase 3 first domains) ships before any of it. Captured here so the laptop session and future sessions have the full picture.
+
+### Phase 4 — Telegram becomes a full conversational interface (REFRAMED, not slash commands)
+
+The original Phase 4 was a slash-command bot (`/run <slug>`, `/plan <text>`). Reframed: **Telegram is a primary chat surface for talking to the OS — like talking to Claude on iMessage.**
+- Natural-language input. Bot captures intent, asks follow-up questions when ambiguous, routes to the right action (skill / task / wiki write / direct reply).
+- Conversation state stored in Supabase (`conversations` table — message history per thread, last intent, pending follow-ups).
+- **Proactive too:** morning briefs at 7am, skill completion pings, due-task reminders all push to Telegram via the same channel.
+- Blocked on: Phase 1.6 stable named tunnel (Telegram needs a non-rotating URL) + Phase 5 task layer + at least 2-3 real skills.
+
+### Phase 5 — Task layer + dashboard-as-task-planner (NEW PHASE)
+
+Reshapes the dashboard from "skill registry" to "task planner where skills are tools you invoke on tasks."
+- New `tasks` table in Supabase: title, category, subcategory, status, due_date, related_skill_slugs[], related_wiki_paths[], source (dashboard/telegram/skill/manual).
+- New `task_runs` join table: links a `runs` row to a `tasks` row so we can see "this skill run happened in the context of task X."
+- Tasks land in Supabase three ways:
+  1. **Telegram** (Phase 4 conversational): "remind me to follow up with coach J Tuesday" → task row
+  2. **Dashboard**: explicit "Add task" UI
+  3. **Skill outputs**: a skill emits task suggestions (raw-triage finds a TODO → proposes a task)
+- **Dashboard reorg:** instead of "4 domain columns of floating skill cards," the dashboard becomes a task planner organized by category (Personal Ops, Nexum, Internship as a cross-cutting category, etc.) with **sub-categories auto-derived from `wiki/<domain>/<subfolder>/` structure**.
+- **Skill cards attach to tasks.** You don't click a floating Run button — you open a task and click Run on a skill within that task's context. The task's metadata (title, related wiki, recent runs) gets passed into the skill prompt. Output gets attached back to the task.
+- "Quick Run" pane preserved for skills not yet attached to a task (secondary UX, not primary).
+- Blocked on: Phase 2.1 polish + at least 5+ skills across 2+ domains.
+
+### Phase 6 — Proactive outreach + routines (NEW PHASE, separated from Telegram)
+
+Distinct from Phase 4 because it's scheduled push (vs interactive chat) and depends on Phase 5 task data.
+- Morning brief routine (~7am daily): assembles calendar + open tasks + overdue + context-aware sentence → Telegram push.
+- Skill completion pings: any skill emits a Telegram message when done (configurable per-skill).
+- Reminder routines: scan `tasks` for due-in-24h, overdue, abandoned-for-N-days → ping.
+- Wiki-health weekly digest: stale articles, orphaned raw/ files, dangling `_index.md` entries.
+- Implementation: each is a SKILL.md + Supabase row + launchd plist on the Mac, pushing through n8n's Telegram node.
+
+### What this means for the build order
+
+Updated phase sequence (revised 2026-05-11):
+```
+Phase 2.1  → dashboard polish (skills.prompt + fire-and-forget)
+↓
+context dump session (memory.context-dump, 45-60 min)
+↓
+Phase 3 → MEMORY skills (weekly-recap, search-wiki, add-note)
+↓
+Phase 1.6 → stable tunnel + custom domain (blocked on Student Pack)
+↓
+Phase 3 → PRODUCTIVITY, NEXUM skills
+↓
+Phase 5 → Task layer (Supabase tasks table + dashboard reorg)
+↓
+Phase 4 → Telegram conversational (depends on stable tunnel + tasks + skills)
+↓
+Phase 6 → Proactive outreach routines
+↓
+Phase 7 → Status + iteration
+↓
+Phase 3 → GROWTH & BUSINESS skills (can also happen earlier — independent)
+```
+
+(GROWTH & BUSINESS domain build is independent of the Telegram/Task layer work and can run in parallel anytime after the context dump.)
+
+---
+
+---
+
+## ▶️ NEXT SESSION (laptop) — pick A, B, or C
+
+**A. Phase 2.1 polish (~1-2 hrs, agent-driven, code changes)**
+- Add `prompt` column to Supabase `skills` table. Populate for the 3 existing MEMORY skills.
+- Update `agentic-os/dashboard/app/api/run/route.ts` to fetch prompt from Supabase by slug (removes the hardcoded echo-test special case).
+- Convert `/api/run` to fire-and-forget pattern: insert `runs` row with `status='running'` → return `{run_id, status:"queued"}` immediately → n8n updates row to `success`/`failure` on completion → dashboard polls Supabase or uses realtime subscription.
+- Outcome: ALL skills work from the deployed dashboard Run button (not just echo-test), AND skills can run longer than Cloudflare's 30s edge timeout.
+- Files to touch: `dashboard/app/api/run/route.ts`, `dashboard/app/components/SkillCard.tsx` (polling logic), maybe a new `dashboard/app/api/run/[run_id]/route.ts` for status polling. SQL: `alter table skills add column prompt text;` via Supabase UI or Management API.
+
+**B. Run the context dump session NOW (45-60 min, conversational with Claude)**
+- Invoke `memory.context-dump` skill OR just paste the SKILL.md prompt into a Claude Code session and run it manually.
+- SKILL.md location: `agentic-os/.claude/skills/memory/context-dump.md`. Has the full 8-topic interview spec (background, current work, Nexum deep dive, build skills, voice/style, goals, fears/motivations, tools/stack).
+- Output: structured markdown files in `wiki/personal/` (already created as empty stub). Updates `wiki/_master-index.md` and `wiki/personal/_index.md` as it goes.
+- Doesn't need Phase 2.1 to be done first — can run via raw conversation in Claude Code on the laptop. The dashboard Run button for this skill won't work cleanly until Phase 2.1 because the route hardcodes echo-test, but the skill itself works fine when invoked directly.
+
+**C. Different work entirely**
+- Security hardening (n8n webhook Header Auth, Mac concurrent-request limiter) — both still pending.
+- Phase 3 first MEMORY skills (weekly-recap, search-wiki, add-note) — would normally need context dump first for grounded prompts, but can pre-design generically.
+
+---
+
+## 💻 Laptop-specific notes (what you can/can't do without ~/.agentic-os.env)
+
+The vault is iCloud-synced, so the laptop has all the source files (CLAUDE.md, plan, dashboard code, SKILL.md, wiki/). BUT sensitive secrets only live on the Mac mini at `~/.agentic-os.env` (chmod 600, not in iCloud). Implications:
+
+| Task | Works on laptop? | Why |
+|---|---|---|
+| Read/edit any vault file | ✅ | iCloud-synced |
+| git commit + push | ✅ | git auth uses your GitHub creds on each machine |
+| Run `npm run dev` locally (dashboard preview) | ✅ | needs `dashboard/.env.local` which IS iCloud-synced (contains only anon key + tunnel URL, no secrets) |
+| Trigger skills via the public dashboard URL | ✅ | hits public Cloudflare Pages URL; auth is server-side in n8n on the Mac |
+| Trigger skills via curl to the cloudflared tunnel | ✅ | n8n webhook is open today; bearer is on the Mac side |
+| Run `memory.context-dump` interview | ✅ | Pure text Q&A, no secrets needed for the interview portion. Output writes to iCloud-synced `wiki/personal/`. |
+| Insert/update Supabase via service role | ❌ on laptop | Service role key is Mac-only. Workaround: use Supabase Dashboard SQL Editor (browser, no key needed) — that's how Phase 2.1's `alter table` would happen. |
+| Restart launchd services / edit ~/.agentic-os.env | ❌ on laptop | Mac-only files. SSH to Mac if needed (Tailscale IP `100.91.142.86`). |
+| Use Cloudflare API token autonomously | ❌ on laptop | Token at `~/.agentic-os.env` on Mac. Workaround: copy token from Mac to laptop's local env if needed, OR just use Cloudflare dashboard UI. |
+
+**Practical implication:** Option B (context dump) is the most laptop-friendly. Option A (Phase 2.1) is mostly laptop-friendly except for the Supabase schema change (do that via Supabase UI in browser) and any final smoke test that depends on Mac-side n8n credentials (still works because n8n is running on the Mac regardless of where you're typing).
+
+---
 
 ## OS domain structure — 4 foundational domains
 

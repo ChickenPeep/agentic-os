@@ -499,30 +499,111 @@ launchctl list | grep agenticos
 
 ---
 
-## Phase 4 — Telegram remote (sub-plan TBD)
+## Phase 4 — Telegram as full conversational interface (sub-plan TBD)
 
-- n8n bot workflow receives `/run <slug>` or `/plan <text>`
-- Same webhooks as dashboard
-- `/plan` exposes the plan/capture pane as a text reply
+_Reframed 2026-05-11. The original spec was slash commands (`/run <slug>`, `/plan <text>`). The real vision is fuller: Telegram becomes a primary chat surface for talking to the OS — like talking to Claude on iMessage._
 
-**When to plan in detail:** After first domain (Phase 3 first pass) is live.
+**Goal:**
+- I talk to the Telegram bot the way I'd talk to Claude: natural language, context-aware, follow-up questions allowed.
+- The bot captures intent, asks clarifying follow-ups when ambiguous, and routes to the right action (run a skill, create a task, file a note, look up a wiki article, schedule a routine).
+- Proactive: not just request/response. The OS pushes morning briefs, skill-completion pings, due-task reminders, and "hey, you said you'd do X" nudges to me through the same Telegram channel.
+
+**Architecture sketch:**
+- n8n Telegram trigger receives every inbound message
+- Conversation state stored in Supabase (`conversations` table — user_id, thread_id, last_intent, last_skill_id, pending_question)
+- Each message → n8n routes to Mac `:4242` with the message + recent conversation context + a routing prompt → claude decides: run a skill / ask follow-up / create a task / reply directly
+- Outbound (proactive): launchd routines OR n8n cron triggers run skills → n8n sends results to Telegram via Bot API
+
+**Key behaviors:**
+- "Hey, draft a Nexum demo email" → bot recognizes intent → asks "Who's the recipient?" → answer → runs the right skill → returns the draft for approval
+- Morning 7am brief: routine runs → outputs go to Telegram, not just dashboard
+- Skill completion pings: when raw-triage finishes, bot says "Triaged 4 files into wiki/, 1 went to _uncertain — want to see?"
+- Task creation: "remind me to follow up with coach J next Tuesday" → creates row in `tasks` table → bot confirms → appears on dashboard (per Phase 5)
+
+**Blockers:**
+- Phase 1.6 stable named tunnel (Telegram needs a non-rotating URL)
+- Phase 5 task layer (for task-creation behaviors)
+- At least 1 working skill (already have it via `memory.raw-triage`)
+
+**When to plan in detail:** After Phase 2.1 + Phase 5 task layer are live, and at least Phase 3 MEMORY domain has 2-3 skills.
 
 ---
 
-## Phase 5 — n8n local migration (optional)
+## Phase 5 — Task layer + dashboard-as-task-planner (NEW)
 
-- Docker on Mac mini
-- Move workflows from n8n cloud to local
-- Single evening of work
-- Trigger: when routine volume justifies the ops cost
+_Added 2026-05-11. Reframes the dashboard from "skill registry" to "task planner where skills are tools you invoke on tasks."_
+
+**Goal:**
+- Add a `tasks` table to Supabase. Tasks have title, category, sub-category, status (open/in_progress/done), due_date, related_skill_slugs[], related_wiki_paths[].
+- Tasks land in Supabase via three channels:
+  1. Telegram (Phase 4): natural-language task creation → row in `tasks`
+  2. Dashboard: explicit "Add task" UI
+  3. Skill outputs: a skill can emit task suggestions (e.g., raw-triage finds a TODO in a raw note → proposes a task)
+- Dashboard evolves: instead of "domain columns of floating skill cards," it becomes a **task planner organized by category** (Personal Ops, Nexum, Internship, etc.), with **sub-categories derived from the actual `wiki/<domain>/` folder structure**.
+- Skill cards attach to tasks. You don't run a skill from a floating button; you run it FROM the context of a task. Skill invocation passes the task's metadata (title, related wiki entries, recent runs) into the prompt → skill output gets attached back to the task as a comment/artifact.
+
+**Schema sketch (additive — doesn't break existing tables):**
+```sql
+create table tasks (
+  id              uuid primary key default gen_random_uuid(),
+  title           text not null,
+  description     text,
+  category        text not null,            -- e.g. 'NEXUM', 'PRODUCTIVITY' (matches existing domain enum + new ones)
+  subcategory     text,                     -- derived from wiki/<domain>/<subfolder>/ when applicable
+  status          text not null default 'open' check (status in ('open','in_progress','done','dropped')),
+  due_date        timestamptz,
+  created_at      timestamptz not null default now(),
+  completed_at    timestamptz,
+  related_skills  text[],                   -- array of skill slugs
+  related_wiki    text[],                   -- array of wiki/<domain>/<slug>.md paths
+  source          text check (source in ('dashboard','telegram','skill','manual'))
+);
+
+create table task_runs (
+  -- joins a `runs` row to a `tasks` row, so we can see "this run happened in the context of task X"
+  task_id  uuid references tasks(id) on delete cascade,
+  run_id   uuid references runs(id)  on delete cascade,
+  primary key (task_id, run_id)
+);
+```
+
+**Dashboard reorg sketch:**
+- Top-level grouping: categories (the 4 OS domains + INTERNSHIP as a category that lives across NEXUM/PRODUCTIVITY)
+- Within each category: tasks listed by status (open, in_progress, done)
+- Each task expands to show: description, related skill cards (with Run buttons that pass task context), related wiki articles (clickable)
+- Sub-categories auto-derived: walk `wiki/<domain>/` subfolders, use folder names as sub-category labels
+- "Floating" skills (skills not attached to any task) live in a "Quick Run" pane — same UX as today, but secondary to the task view
+
+**When to plan in detail:** After Phase 2.1 polish is live and Phase 3 has produced 5+ skills across at least 2 domains. Need enough real skills + real tasks for the task-layer UX to be meaningful.
 
 ---
 
-## Phase 6 — Status + iteration (sub-plan TBD)
+## Phase 5.1 — n8n local migration (DONE, subsumed by Phase 1.5)
+
+Originally planned as a separate phase. Already done during Phase 1.5 (n8n runs locally on Mac mini via launchd; original n8n cloud instance retired).
+
+---
+
+## Phase 6 — Proactive outreach + routines (sub-plan TBD)
+
+_Refined 2026-05-11. Originally lumped into the Telegram phase; broken out as a phase because it's a distinct concept (scheduled push) and depends on Phase 4 push channel + Phase 5 task layer._
+
+- Morning brief routine (~7am daily): assembles calendar items + today's open tasks + any overdue items + a "context-aware sentence or two" → pushes to Telegram
+- Skill completion pings: any skill that produces user-relevant output emits a Telegram message when done (configurable per-skill)
+- Reminder routines: scan `tasks` table for tasks due in 24h / overdue / abandoned-for-N-days → ping
+- Wiki-health routine: scan wiki/ for stale articles, orphaned raw/ files, dangling `_index.md` entries → weekly digest
+
+**Implementation pattern:** each is a SKILL.md + Supabase row + launchd plist on the Mac. Skills push to Telegram via n8n's Telegram node. Reuses the Phase 4 push channel.
+
+**When to plan in detail:** After Phase 4 (Telegram conversational) + Phase 5 (Task layer) are both live.
+
+---
+
+## Phase 7 — Status + iteration (was Phase 6, sub-plan TBD)
 
 - `STATUS.md` auto-updated from Supabase (weekly routine)
-- Weekly review skill: usage, failures, retirements
-- Wiki health skill: stale articles, orphaned raw/ files
+- Weekly review skill: usage, failures, retirements, "skills you haven't run in 14 days — kill them?"
+- Wiki health skill (also referenced in Phase 6): stale articles, orphaned raw/ files
 
 ---
 
@@ -540,9 +621,11 @@ _Last updated: 2026-05-11_
 | 2.1 — Dashboard polish | NOT STARTED | `skills.prompt` column + fire-and-forget /api/run (so all skills work from Run button, not just echo-test) + plan/capture pane + wiki search |
 | 3 — Domain interviews | IN PROGRESS | MEMORY domain scaffolded (echo-test + raw-triage + context-dump live). Build order: MEMORY → PRODUCTIVITY → NEXUM → GROWTH & BUSINESS. Additional wiki folders (school, football, etc.) are not OS domains and have no active skill build. |
 | 3 pre-step — Context dump session | NOT STARTED | `memory.context-dump` skill registered; runs after Phase 2.1 ships. |
-| 4 — Telegram remote | NOT STARTED | Blocked until Phase 1.6 stable tunnel |
-| 5 — n8n local migration | DONE | Subsumed by Phase 1.5 |
-| 6 — Status + iteration | NOT STARTED | |
+| 4 — Telegram conversational interface | NOT STARTED | Reframed 2026-05-11: full LLM-mediated chat, not just slash commands. Captures intent + asks follow-ups + creates tasks (Phase 5) + supports proactive pushes (Phase 6). Blocked on Phase 1.6 stable tunnel + Phase 5 task layer + at least 2-3 working skills. |
+| 5 — Task layer + dashboard-as-task-planner | NOT STARTED | NEW phase added 2026-05-11. Adds `tasks` table to Supabase; dashboard reorganizes from skill registry → task planner organized by category with sub-categories from `wiki/<domain>/` subfolders; skill cards attach to tasks (run-from-task-context). When to plan: after Phase 2.1 + Phase 3 has 5+ skills. |
+| 5.1 — n8n local migration | DONE | Subsumed by Phase 1.5 |
+| 6 — Proactive outreach + routines | NOT STARTED | NEW phase reorganized 2026-05-11. Morning briefs, skill completion pings, due-task reminders, wiki health digest. All push via Phase 4 Telegram channel. Blocked on Phase 4 + Phase 5. |
+| 7 — Status + iteration | NOT STARTED | Was Phase 6. Auto-update STATUS.md weekly, skill usage/retirement review, wiki health scan. |
 
 ---
 
