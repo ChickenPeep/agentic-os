@@ -113,6 +113,8 @@ caller → n8n webhook → Supabase Get Skill → IF Active → Mac :4242 → cl
 - Phase 1.6 (parallel) — when GitHub Student Pack approves: register `gabrieltorres.me` → migrate DNS to Cloudflare → swap quick tunnel for stable named tunnel `n8n.gabrieltorres.me`
 - Phase 3 — Domain interview loop (MEMORY → PRODUCTIVITY → NEXUM → ...)
 
+_Last auto-ship test: 2026-05-11T21:41:00Z_
+
 ## Known issues / housekeeping
 
 - **`agentic-os-Vault/` at vault root** — Obsidian's default welcome vault (3 stub files + .obsidian config). Not a duplicate of the project. Safe to delete. (See "Items needing decision" in HANDOFF.md.)
