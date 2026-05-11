@@ -1,4 +1,4 @@
-name = "agentic-os-dashboard"
-compatibility_date = "2024-09-23"
+name = "agentic-os-flare"
+compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
