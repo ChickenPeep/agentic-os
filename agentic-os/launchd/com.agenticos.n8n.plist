@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.agenticos.n8n</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/opt/node@22/bin/node</string>
+    <string>/Users/gabri/.n8n-runtime/bin/n8n</string>
+    <string>start</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>N8N_PORT</key>
+    <string>5678</string>
+    <key>N8N_HOST</key>
+    <string>0.0.0.0</string>
+    <key>N8N_PROTOCOL</key>
+    <string>http</string>
+    <key>N8N_USER_FOLDER</key>
+    <string>/Users/gabri/.n8n</string>
+    <key>N8N_DIAGNOSTICS_ENABLED</key>
+    <string>false</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/gabri</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/gabri/agentic-os-server/n8n-stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/gabri/agentic-os-server/n8n-stderr.log</string>
+</dict>
+</plist>

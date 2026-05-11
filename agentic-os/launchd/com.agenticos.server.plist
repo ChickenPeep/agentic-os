@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.agenticos.server</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/gabri/agentic-os-server/server.js</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- AGENTIC_OS_API_KEY removed — loaded via dotenv from ~/.agentic-os.env in server.js. No placeholder needed. -->
+    <key>VAULT_PATH</key>
+    <string>/Users/gabri/Library/Mobile Documents/com~apple~CloudDocs/agentic-os-vault</string>
+    <key>PORT</key>
+    <string>4242</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/gabri/agentic-os-server/stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/gabri/agentic-os-server/stderr.log</string>
+</dict>
+</plist>
