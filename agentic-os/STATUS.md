@@ -125,3 +125,5 @@ _Last auto-ship test: 2026-05-11T21:41:00Z_
 
 - `credentials/.env` is **git-ignored** (root `.gitignore` excludes the whole `credentials/` directory)
 - BUT the entire vault lives in iCloud Drive, so `credentials/.env` syncs to iCloud and to every other machine signed into the same Apple ID. This was a deliberate informed choice — see `HANDOFF.md` and the auto-memory note. If higher security is ever needed, copy the env vars to a per-machine `~/.agentic-os.env` (chmod 600, never in iCloud) and have services read from there instead.
+
+_Webhook end-to-end test: 
