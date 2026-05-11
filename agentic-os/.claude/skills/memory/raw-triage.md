@@ -42,16 +42,26 @@ For each .md or .txt file found in raw/ (not in subdirs, not .gitkeep):
 - Read the relevant wiki domain _index.md for context (bash cat)
 - Decide the domain based on content
 
-The 9 domains and their wiki subfolders:
+### PRIMARY domains (4 OS domains — prefer these when content could reasonably fit)
+
+Route to a PRIMARY domain when content fits OR when classification is ambiguous.
+
+- MEMORY -> wiki/memory/ : meta-level notes about how Gabriel organizes information, the agentic-os system itself, vault structure
+- PRODUCTIVITY -> wiki/productivity/ : tools, workflows, or techniques for being more productive in general
 - NEXUM -> wiki/nexum/ : D3 football performance tracking platform, Supabase schema for Nexum, Hudl integration, play tracking, stat apps
-- FOOTBALL -> wiki/football/ : gym sessions, lift notes, practice notes, on-field performance, physical training, game prep at UWO
-- CONSULTING -> wiki/consulting/ : AI consulting at UW Oshkosh, Copilot/Gemini rollout, faculty workshops, DLP, M365, meetings with university staff
+- GROWTH & BUSINESS -> wiki/growth-business/ : daily learning, idea generation, consulting prep, sales/outreach, small business consulting, AI-building notes, Nexum GTM strategy
+
+### SECONDARY domains (note-storage folders — route here ONLY when content is unambiguously about that area)
+
+Route to a SECONDARY domain only when content clearly and exclusively belongs there (e.g., a Bible study passage note, a football lift log, a UWO coursework note). If in doubt, prefer a PRIMARY domain.
+
 - SCHOOL -> wiki/school/ : coursework, classes, GPA, professors, academic deadlines at UW Oshkosh
-- PERSONAL OPS -> wiki/personal-ops/ : personal productivity, time management, life organization, habits, routines
+- FOOTBALL -> wiki/football/ : gym sessions, lift notes, practice notes, on-field performance, physical training, game prep at UWO
 - BIBLE STUDY -> wiki/bible-study/ : Bible study leadership, spiritual reflection, small group content
 - SIDE PROJECTS -> wiki/side-projects/ : projects other than Nexum and agentic-os
-- MEMORY -> wiki/memory/ : meta-level notes about how Gabriel organizes information, the agentic-os system itself
-- PRODUCTIVITY -> wiki/productivity/ : tools, workflows, or techniques for being more productive in general
+- PERSONAL OPS -> wiki/personal-ops/ : personal productivity, time management, life organization, habits, routines (if not clearly PRODUCTIVITY)
+- CONSULTING -> wiki/consulting/ : campus AI consulting at UW Oshkosh — Copilot/Gemini rollout, faculty workshops, DLP, M365, meetings with university staff (distinct from GROWTH & BUSINESS consulting prep)
+- AI SYSTEMS -> wiki/ai-systems/ : AI engineering knowledge, model behavior, prompt design, agentic architecture
 
 High confidence = file clearly belongs to ONE domain. Low confidence = could plausibly belong to 2+ domains, or matches none well.
 

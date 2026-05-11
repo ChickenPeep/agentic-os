@@ -10,6 +10,52 @@
 
 ---
 
+## Foundational OS structure — 4 active domains
+
+_Set 2026-05-11. The OS is built for 4 domains where Gabe operates daily. Other wiki folders persist for note-storage but aren't OS domains and aren't part of the skill build. Additions to this domain set happen on-demand when a real need surfaces — not as a queued backlog._
+
+### The 4 OS domains
+
+1. **MEMORY** — vault, wiki, capture. Foundation, always on.
+2. **PRODUCTIVITY** — calendar brief, daily focus, weekly review.
+3. **NEXUM** — full product lifecycle:
+   - Engineering: schema, features, deploys, code review
+   - Customer feedback: coach/player conversations, feedback loops
+   - GTM: positioning, outreach to D3 programs, pricing exploration
+   - Polish + portfolio: presentation quality, demo flows
+4. **GROWTH & BUSINESS** — combined daily learning + business expansion:
+   - Daily learning routine: surfaces ONE high-signal YouTube video per day relevant to Nexum, AI building, or consulting. Also tracks Claude/Anthropic and OpenAI/ChatGPT updates daily.
+   - Idea generation: weekly skill that produces new app ideas, new AI uses for Nexum, new consulting angles.
+   - Consulting prep: builds out positioning, client discovery patterns, deliverable templates for small business consulting.
+   - Sales/outreach: cold email templates, follow-up cadences, lead capture.
+
+### Additional wiki folders (not OS domains, not skill-tracked)
+
+school, football, bible-study, side-projects, personal-ops, consulting (campus AI consulting — distinct from GROWTH & BUSINESS consulting prep), ai-systems
+
+These receive notes via raw-triage SECONDARY routing when content clearly belongs there. No active skill build planned. If a real need emerges later, a folder can be promoted to OS-domain status (own dashboard column, skill folder, classifier PRIMARY slot).
+
+### OS skill count target
+
+| Domain | Target |
+|---|---|
+| MEMORY | 3–4 skills |
+| PRODUCTIVITY | 3–4 skills |
+| NEXUM | 6–8 skills (engineering / customer feedback / GTM / polish + portfolio) |
+| GROWTH & BUSINESS | 5–7 skills (daily learning / idea generation / consulting prep / sales+outreach) |
+
+**Total: ~20 skills.** The OS is "real" when these are built and running.
+
+### Phase 3 build order
+
+MEMORY → PRODUCTIVITY → NEXUM → GROWTH & BUSINESS.
+
+### Pre-Phase-3 step — Context dump session (NEW)
+
+A dedicated 45–60 minute interview captures Gabe's background/work/goals/voice/projects/approach as durable wiki articles in `wiki/personal/`. The interview is itself a skill: `memory.context-dump`. Runs after Phase 2.1 polish; precedes Phase 3 first-domain interview.
+
+---
+
 ## Conventions & Decisions
 
 ### Host decision matrix
@@ -439,15 +485,17 @@ launchctl list | grep agenticos
 
 ## Phase 3 — Domain interview loop (sub-plan TBD)
 
-**Order:** MEMORY → PRODUCTIVITY → NEXUM → CONSULTING → SCHOOL → BIBLE STUDY → FOOTBALL → SIDE PROJECTS → PERSONAL OPS
+**Build order:** MEMORY → PRODUCTIVITY → NEXUM → GROWTH & BUSINESS.
+
+**Pre-step:** before the first domain interview, run the **context dump session** (`memory.context-dump` skill, 45–60 min, captures Gabe's background/work/goals/voice/projects → wiki articles in `wiki/personal/`). This grounds every subsequent skill.
 
 **Per domain scaffold:**
 1. Interview (light mode, 3–5 items max)
-2. For each item: write SKILL.md → `INSERT into skills` → create n8n webhook → add dashboard card → drop wiki stub
+2. For each item: write SKILL.md → `INSERT into skills` → register in Supabase (so the dashboard Run button picks it up) → drop wiki stub
 3. If routine: write launchd plist
 4. Live for a week before next domain
 
-**When to plan in detail:** After Phase 2 dashboard is live.
+**When to plan in detail:** After Phase 2.1 polish ships AND the context dump session runs.
 
 ---
 
@@ -480,7 +528,7 @@ launchctl list | grep agenticos
 
 ## Current status
 
-_Last updated: 2026-05-10_
+_Last updated: 2026-05-11_
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -488,10 +536,12 @@ _Last updated: 2026-05-10_
 | 1 — Memory + Mac foundation | DONE | Mac endpoint :4242, n8n self-hosted :5678, launchd services live, Supabase schema deployed, skills registered |
 | 1.5 — n8n self-host migration | DONE | n8n running locally on Mac mini; cloud instance retired |
 | 1.6 — Stable named tunnel | BLOCKED | Waiting on GitHub Student Pack → domain → Cloudflare DNS |
-| 2 — Dashboard MVP | NOT STARTED | |
-| 3 — Domain interviews | IN PROGRESS | MEMORY domain scaffolded (raw-triage skill live) |
+| 2 — Dashboard MVP v1 | LIVE | https://agentic-os-40r.pages.dev — public; reads from Supabase via anon+RLS; Run button works for `memory.echo-test` end-to-end |
+| 2.1 — Dashboard polish | NOT STARTED | `skills.prompt` column + fire-and-forget /api/run (so all skills work from Run button, not just echo-test) + plan/capture pane + wiki search |
+| 3 — Domain interviews | IN PROGRESS | MEMORY domain scaffolded (echo-test + raw-triage + context-dump live). Build order: MEMORY → PRODUCTIVITY → NEXUM → GROWTH & BUSINESS. Additional wiki folders (school, football, etc.) are not OS domains and have no active skill build. |
+| 3 pre-step — Context dump session | NOT STARTED | `memory.context-dump` skill registered; runs after Phase 2.1 ships. |
 | 4 — Telegram remote | NOT STARTED | Blocked until Phase 1.6 stable tunnel |
-| 5 — n8n local migration | DONE | Already running locally (completed during Phase 1.5) |
+| 5 — n8n local migration | DONE | Subsumed by Phase 1.5 |
 | 6 — Status + iteration | NOT STARTED | |
 
 ---

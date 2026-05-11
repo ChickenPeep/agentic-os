@@ -4,9 +4,18 @@ _Update this file at the end of every build session._
 
 ---
 
-## Last updated: 2026-05-10 (evening session, end-of-day wrap)
+## Last updated: 2026-05-11 (late-night session — Cloudflare deploy + GitHub push + dashboard live + summer scope reframe)
 
-## Current phase: Phase 1 + 1.5 + 2 v1 SHIPPED. Reviewed by code-review and security-review agents. All blockers/HIGH issues fixed. Next: Phase 2.1 (dashboard prompt resolution + fire-and-forget) → push to GitHub + Cloudflare Pages deploy → Phase 1.6 (named tunnel, blocked on Student Pack).
+## Current phase: Phase 1 + 1.5 + 2 v1 SHIPPED. Vault on GitHub (private). Cloudflare Pages live at https://agentic-os-40r.pages.dev — `/api/run` end-to-end verified, homepage HTML verified after favicon fix landed. Pending: **Phase 2.1** (skills.prompt column + fire-and-forget /api/run), then **NEW context dump session** (per Summer Focus reframe), then **Phase 3** with the summer 4-domain scope.
+
+## OS domain structure — 4 foundational domains
+
+The OS is built around 4 domains where Gabe operates daily: **MEMORY, PRODUCTIVITY, NEXUM, GROWTH & BUSINESS**. These ARE the OS — not a temporary narrowing. Additional wiki folders (school, football, bible-study, side-projects, personal-ops, consulting, ai-systems) persist for note-storage and receive raw-triage SECONDARY routing, but they are not OS domains and have no active skill build. If a real need emerges later, a folder can be promoted to OS-domain status.
+
+**Operational order for next sessions:**
+1. Finish Phase 2.1 (dashboard polish — skills.prompt column + fire-and-forget /api/run + plan/capture pane + wiki search). Dashboard now renders 4 columns (post-restructure deploy).
+2. Run the **context dump session** (`memory.context-dump` skill, 45–60 min): Gabe answers 8 interview topics covering background/work/goals/voice/projects/approach. Output: wiki articles in `wiki/personal/`. Grounds every skill that follows.
+3. Phase 3 build order: **MEMORY → PRODUCTIVITY → NEXUM → GROWTH & BUSINESS**.
 
 ---
 
@@ -105,6 +114,12 @@ Verified 2026-05-10 evening: `grep -rl <bearer-key>` and `grep -rl <service-role
 | Phase 2 v1 — Run button wired | SHIPPED | `/api/run` POSTs to webhook; `memory.echo-test` returns PONG end-to-end |
 | Code review (correctness + plan conformance) | DONE | Findings cataloged; all blockers/important fixed |
 | Security review (secrets, perms, threat model) | DONE | Findings cataloged; all CRITICAL + HIGH fixed |
+| **Phase 2 v1 — GitHub push** | SHIPPED 2026-05-11 | Vault at `https://github.com/ChickenPeep/agentic-os` (private). 7 commits. Comprehensive `.gitignore` excludes credentials/raw/wiki/output/.obsidian/agentic-os-Vault/dashboard build artifacts. Zero secret leaks verified. |
+| **Phase 2 v1 — Cloudflare Pages deploy** | SHIPPED 2026-05-11 | Live at `https://agentic-os-40r.pages.dev`. Project name: `agentic-os` (Pages). Connected to `ChickenPeep/agentic-os` main branch. Build = `npx @cloudflare/next-on-pages`, root = `agentic-os/dashboard`. 4 env vars set on Production+Preview. |
+| **Phase 2 v1 — End-to-end deployed verification** | SHIPPED 2026-05-11 | `POST https://agentic-os-40r.pages.dev/api/run -d '{"skill_slug":"memory.echo-test"}'` → returned `{"output":"PONG\n","run_id":"d73033ce-...","skill_slug":"memory.echo-test"}` AND landed a row in Supabase `runs` table with `triggered_by=dashboard`. Full chain: public internet → Pages edge → cloudflared tunnel → Mac n8n → Mac Express :4242 → claude --print → all the way back. |
+| **Cloudflare API token saved** | DONE 2026-05-11 | Workers Scripts + Account Settings scope. Stored at `~/.agentic-os.env` (chmod 600, Mac-only, NOT iCloud). Lets future sessions manage Cloudflare programmatically. |
+| **Stale Worker `agentic-os-flare` deleted** | DONE 2026-05-11 | Was a leftover Hello-World stub from when the project was first created as a Worker (wrong product). Deleted via API. |
+| **`app/favicon.ico` → `public/favicon.ico` move (commit `2376623`)** | SHIPPED 2026-05-11 | Fix for App-Router-treats-favicon-as-route bug that was making `GET /` serve favicon binary instead of page HTML. Verified live at 22:32 UTC: homepage now serves `text/html` and renders the full board. |
 
 ### Fixes applied this session (post-review)
 
@@ -123,9 +138,9 @@ Verified 2026-05-10 evening: `grep -rl <bearer-key>` and `grep -rl <service-role
 
 ## Next session — start here
 
-### Immediate (Phase 2.1, ~1-2 hrs, agent-driven)
+### Immediate (Phase 2.1 polish, ~1-2 hrs, agent-driven)
 
-The dashboard works in local dev because the prompt for `memory.echo-test` is hardcoded in the API route and skills don't need filesystem access. Two limits to fix before we can deploy to Cloudflare Pages:
+Phase 2 v1 is LIVE on the public internet (https://agentic-os-40r.pages.dev). The Run button only works for `memory.echo-test` today because it's special-cased in `/api/run/route.ts`. Polish before any new skill work:
 
 1. **Add a `prompt` column to the `skills` table** so skills can self-describe their canonical prompt:
    ```sql
@@ -154,17 +169,19 @@ The dashboard works in local dev because the prompt for `memory.echo-test` is ha
 
 5. **Add a simple concurrent-request limiter to `~/agentic-os-server/server.js`** (max 2-3 concurrent claude spawns; return 429 over). Prevents quota burn from accidental loops.
 
-### Then (~15 min, mostly UI)
+### After Phase 2.1 — Context dump session (NEW, ~45-60 min, conversational)
 
-6. **Push the vault to GitHub** at `https://github.com/ChickenPeep/agentic-os` (note: `credentials/` is already gitignored). The dashboard at `agentic-os/dashboard/` will be the Cloudflare Pages root.
+Per the SUMMER FOCUS reframe (top of `AGENTIC_OS_PLAN.md`): before any Phase 3 domain interviews, run a dedicated context dump.
 
-7. **Cloudflare Pages connect** — full walkthrough in `agentic-os/dashboard/RESEARCH.md` section 4. Set env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_RUN_WEBHOOK_URL`. Deploy to `agentic-os-dashboard.pages.dev`.
+- Format: Gabe talks through background, current work, goals, voice, previous projects, approach. Claude listens + asks follow-ups.
+- Output: one or more wiki articles in `wiki/personal/` (new folder — create at session time). These become reference material for every skill that follows.
+- Why now: grounds the upcoming Phase 3 skill prompts in Gabe's real voice/context instead of generic AI prose.
 
 ### Async (Student Pack approval, then Phase 1.6)
 
-8. **Wait on GitHub Student Developer Pack approval.** Applied 2026-05-10 with @uwosh.edu email.
+6. **Wait on GitHub Student Developer Pack approval.** Applied 2026-05-10 with @uwosh.edu email.
 
-9. **Once approved (Phase 1.6):**
+7. **Once approved (Phase 1.6):**
    - Redeem free `.me` domain on Namecheap → `gabrieltorres.me`
    - Add domain to Cloudflare, change Namecheap nameservers
    - `cloudflared tunnel login` → `tunnel create agentic-os` → `tunnel route dns agentic-os n8n.gabrieltorres.me`
@@ -172,12 +189,21 @@ The dashboard works in local dev because the prompt for `memory.echo-test` is ha
    - Add `WEBHOOK_URL=https://n8n.gabrieltorres.me/` to n8n plist, reload
    - Update `credentials/.env` `N8N_TUNNEL_URL` to stable URL
    - Update Cloudflare Pages env var `NEXT_PUBLIC_RUN_WEBHOOK_URL` to stable URL
-   - Add **Cloudflare Access** policy on the Pages domain (Google login, only @uwosh.edu or Gabe's email) — closes the public dashboard surface
+   - Add **Cloudflare Access** policy on the Pages domain (Google login) — closes the public dashboard surface
    - Detailed step-by-step: `agentic-os/n8n-self-host/SETUP.md` "Upgrading to a stable tunnel"
 
-### Later (Phase 3, when above is settled)
+### Phase 3 (after Phase 2.1 + context dump are done)
 
-10. **Domain interview loop** — start with MEMORY (already has `memory.echo-test` and `memory.raw-triage` — add 2-3 more like `memory.weekly-recap`, `memory.search-wiki`, `memory.add-note`). Then PRODUCTIVITY → NEXUM → CONSULTING → SCHOOL → BIBLE STUDY → FOOTBALL → SIDE PROJECTS → PERSONAL OPS → AI SYSTEMS. Each new skill = one INSERT into Supabase + one SKILL.md file. The substrate is shared; no new n8n config per skill.
+**Build order:** MEMORY → PRODUCTIVITY → NEXUM → GROWTH & BUSINESS.
+
+- MEMORY: already has `memory.echo-test`, `memory.raw-triage`, `memory.context-dump`. Plan adds 1-2 more (e.g., `memory.weekly-recap`, `memory.search-wiki`).
+- PRODUCTIVITY: 3-4 skills (e.g., calendar brief, daily focus, weekly review).
+- NEXUM: 6-8 skills split across engineering / customer feedback / GTM / polish + portfolio.
+- GROWTH & BUSINESS: 5-7 skills (daily learning, idea generation, consulting prep, sales/outreach).
+
+Total target: ~20 skills.
+
+**Not OS domains — not skill-tracked:** school, football, bible-study, side-projects, personal-ops, consulting, ai-systems. They receive raw-triage SECONDARY routing for notes but no skills are built for them.
 
 ---
 

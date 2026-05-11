@@ -9,7 +9,7 @@ _Auto-updated by the weekly status routine. Last updated manually: 2026-05-10 (e
 | 0 — Plan document | DONE | `agentic-os/AGENTIC_OS_PLAN.md` reviewed and approved |
 | 1 — Memory + Mac foundation | **SHIPPED** | End-to-end smoke test passed 2026-05-10 20:33 UTC. `memory.echo-test` skill returned `PONG\n`, run row in Supabase. |
 | 1.5 — n8n self-host (was Phase 5, pulled forward) | **SHIPPED** | n8n + cloudflared running as launchd; workflow active; quick tunnel URL live |
-| 2 — Dashboard MVP | **v1 SCAFFOLDED** | Dev server verified locally 2026-05-10. Needs: SKILL.md prompt resolution (add `prompt` col to skills table), Cloudflare Pages deploy, custom domain. |
+| 2 — Dashboard MVP | **v1 LIVE on public internet** | https://agentic-os-40r.pages.dev — verified end-to-end 2026-05-11. Run button works for `memory.echo-test`. Dashboard renders 4 OS-domain columns post-restructure. Still needs: `skills.prompt` column for non-echo skills + fire-and-forget /api/run (Phase 2.1) + custom domain (Phase 1.6). |
 | 3 — Domain interview loop | NOT STARTED | MEMORY → PRODUCTIVITY → NEXUM → … |
 | 4 — Telegram remote | NOT STARTED | Needs stable named tunnel (replace quick tunnel first) |
 | 5 — n8n local migration | DONE | Subsumed by Phase 1.5 |
@@ -75,17 +75,14 @@ Project `ykfjnageewaonunrnwft` — schema deployed:
 
 | Domain | Skills | Routines | Agents |
 |---|---|---|---|
-| MEMORY | 2 | 0 | 0 |
+| MEMORY | 3 | 0 | 0 |
 | PRODUCTIVITY | 0 | 0 | 0 |
 | NEXUM | 0 | 0 | 0 |
-| CONSULTING | 0 | 0 | 0 |
-| SCHOOL | 0 | 0 | 0 |
-| FOOTBALL | 0 | 0 | 0 |
-| BIBLE STUDY | 0 | 0 | 0 |
-| SIDE PROJECTS | 0 | 0 | 0 |
-| PERSONAL OPS | 0 | 0 | 0 |
+| GROWTH & BUSINESS | 0 | 0 | 0 |
 
-MEMORY skills: `memory.echo-test` (smoke test / PONG), `memory.raw-triage` (triages raw/ into wiki/).
+_Additional wiki folders (school, football, bible-study, side-projects, personal-ops, consulting, ai-systems) exist for note-storage but are not OS domains and don't have skills built._
+
+MEMORY skills: `memory.echo-test` (smoke test / PONG), `memory.raw-triage` (triages raw/ into wiki/), `memory.context-dump` (45-60 min interview → wiki/personal/ articles).
 
 ## Live working flows (end-to-end verified)
 

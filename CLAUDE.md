@@ -35,14 +35,18 @@ agentic-os-vault/
 ├── raw/                       ← inbox, dump anything (triage within ~7 days)
 ├── wiki/                      ← LLM-maintained domain knowledge
 │   ├── _master-index.md       ← entry point, updated after every wiki write
-│   ├── nexum/
-│   ├── consulting/
-│   ├── school/
-│   ├── football/
-│   ├── bible-study/
-│   ├── side-projects/
-│   ├── personal-ops/
-│   └── ai-systems/
+│   ├── memory/                ← OS domain
+│   ├── productivity/          ← OS domain
+│   ├── nexum/                 ← OS domain
+│   ├── growth-business/       ← OS domain
+│   ├── personal/              ← context-dump output (reference for all skills)
+│   ├── consulting/            ← note-storage only
+│   ├── school/                ← note-storage only
+│   ├── football/              ← note-storage only
+│   ├── bible-study/           ← note-storage only
+│   ├── side-projects/         ← note-storage only
+│   ├── personal-ops/          ← note-storage only
+│   └── ai-systems/            ← note-storage only
 ├── output/                    ← query results, reports, slide decks
 └── agentic-os/                ← the OS code itself
     ├── AGENTIC_OS_PLAN.md     ← master build plan
@@ -56,9 +60,11 @@ agentic-os-vault/
     └── n8n-workflows/         ← exported workflow JSON
 ```
 
-## Domains
+## Domains (the 4 foundational OS domains)
+MEMORY, PRODUCTIVITY, NEXUM, GROWTH & BUSINESS
 
-MEMORY, PRODUCTIVITY, NEXUM, CONSULTING, SCHOOL, FOOTBALL, BIBLE STUDY, SIDE PROJECTS, PERSONAL OPS
+## Additional wiki folders (no OS skill build, but raw-triage can route notes here when unambiguous)
+school, football, bible-study, side-projects, personal-ops, consulting, ai-systems
 
 ## Abstraction levels
 

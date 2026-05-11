@@ -52,7 +52,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gray-50">
       <StatusHeader counts={counts} totalSkills={skills.length} />
       <main className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-9 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {DOMAINS.map((domain) => (
             <DomainColumn key={domain} domain={domain} skills={byDomain[domain]} />
           ))}
