@@ -76,7 +76,7 @@ Project `ykfjnageewaonunrnwft` — schema deployed:
 | Domain | Skills | Routines | Agents |
 |---|---|---|---|
 | MEMORY | 3 | 0 | 0 |
-| PRODUCTIVITY | 0 | 0 | 0 |
+| PRODUCTIVITY | 1 | 1 | 0 |
 | NEXUM | 0 | 0 | 0 |
 | GROWTH & BUSINESS | 0 | 0 | 0 |
 
