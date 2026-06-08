@@ -16,6 +16,9 @@ rsync -a --delete \
   --exclude 'data/' --exclude '__pycache__/' --exclude '.venv/' --exclude '.pytest_cache/' \
   "$SRC/" "$DEST/"
 
+echo "==> Copying shared notes.py"
+cp "$MAC_VAULT/agentic-os/lib/notes.py" "$DEST/notes.py"
+
 echo "==> Installing Python deps"
 python3 -m pip install -q -r "$DEST/requirements.txt"
 

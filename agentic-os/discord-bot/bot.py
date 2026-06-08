@@ -36,7 +36,6 @@ TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 OWNER_ID = int(os.environ["DISCORD_OWNER_ID"])
 CHANNEL_ID = int(os.environ["DISCORD_CHANNEL_ID"])
 SETTINGS_PATH = os.path.join(HERE, "bridge-settings.json")
-RAW_DIR = os.path.join(VAULT, "raw")
 STATE = Store(os.path.join(HERE, "data", "state.json"))
 
 intents = discord.Intents.default()
@@ -73,13 +72,7 @@ async def on_message(message: discord.Message):
 
 
 async def _handle_task(message: discord.Message, text: str):
-    # Best-effort logging (never blocks chat).
-    try:
-        idealog.log_idea(text, message.jump_url, RAW_DIR)
-    except Exception as e:
-        print(f"[idealog raw] {e}")
-    started = idealog._utcnow()
-    run_id = await asyncio.to_thread(idealog.log_run, started, "running", text)
+    await asyncio.to_thread(idealog.capture_idea, VAULT, text, message.jump_url)
 
     rec = STATE.get(message.channel.id)
     session_id = rec.get("session_id") or str(uuid.uuid4())
@@ -137,8 +130,7 @@ async def _handle_task(message: discord.Message, text: str):
 
     except Exception as e:
         await placeholder.edit(content=f"⚠️ run failed: {e}")
-        if run_id:
-            await asyncio.to_thread(idealog.update_run, run_id, "failure", str(e))
+        await asyncio.to_thread(idealog.log_activity, VAULT, "failure", f"run failed: {e}")
         return
 
     if result.session_id:
@@ -157,8 +149,11 @@ async def _handle_task(message: discord.Message, text: str):
         footer = f"\n\n📦 staged on `{branch}`:\n```\n{diffstat[:600]}\n```\nReply **ship it** to push + open a PR."
     final_msg = helpers.format_progress(progress, summary)[:1700] + footer
     await placeholder.edit(content=final_msg[:1990])
-    if run_id:
-        await asyncio.to_thread(idealog.update_run, run_id, "failure" if result.is_error else "success", summary)
+    await asyncio.to_thread(
+        idealog.log_activity, VAULT,
+        "failure" if result.is_error else ("staged" if diffstat else "success"),
+        summary[:300], branch if diffstat else None,
+    )
 
 
 async def _handle_approval(message: discord.Message):
