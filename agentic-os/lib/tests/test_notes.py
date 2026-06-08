@@ -22,3 +22,21 @@ def test_write_note_roundtrip(tmp_path):
     assert 'title: "Hi: there"' in content   # value with ':' gets quoted
     assert "type: idea" in content
     assert content.rstrip().endswith("body text")
+
+
+def test_write_activity(tmp_path):
+    p = notes.write_activity(str(tmp_path), "pokemon.check-stock", "success",
+                             "checked 6, 0 in stock", when="2026-06-08T14:30:00Z")
+    assert p.endswith("command-center/activity/2026-06-08-1430-pokemon-check-stock.md")
+    c = open(p).read()
+    assert "type: activity" in c
+    assert "skill: pokemon.check-stock" in c
+    assert "status: success" in c
+    assert "when: 2026-06-08T14:30:00Z" in c
+
+
+def test_write_activity_with_branch(tmp_path):
+    p = notes.write_activity(str(tmp_path), "command-center.bot", "staged",
+                             "built streak counter", when="2026-06-08T14:30:00Z",
+                             branch="bot/streak-counter")
+    assert 'branch: bot/streak-counter' in open(p).read()

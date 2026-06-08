@@ -33,6 +33,9 @@ def _stamp(iso: str) -> str:
 
 def _yaml_value(v) -> str:
     s = "" if v is None else str(v)
+    # ISO 8601 timestamps (e.g. 2026-06-08T14:30:00Z) are safe unquoted in YAML
+    if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$", s):
+        return s
     if s == "" or re.search(r'[:#\[\]{}",]', s) or s != s.strip():
         return '"' + s.replace('"', '\\"') + '"'
     return s
@@ -47,3 +50,14 @@ def _write_note(path: str, frontmatter: dict, body: str) -> str:
     with open(path, "w") as f:
         f.write("\n".join(lines))
     return path
+
+
+def write_activity(vault: str, skill: str, status: str, summary: str,
+                   when: str | None = None, branch: str | None = None) -> str:
+    when = when or _utcnow()
+    fm = {"type": "activity", "skill": skill, "status": status,
+          "when": when, "summary": summary}
+    if branch:
+        fm["branch"] = branch
+    name = f"{_stamp(when)}-{_slugify(skill)}.md"
+    return _write_note(os.path.join(vault, CC, "activity", name), fm, summary)
