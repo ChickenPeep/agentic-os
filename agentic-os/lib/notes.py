@@ -31,21 +31,23 @@ def _stamp(iso: str) -> str:
     return f"{y}-{mo}-{d}-{h}{mi}"
 
 
-def _yaml_value(v) -> str:
+def _yaml_value(v, force_quote: bool = False) -> str:
     s = "" if v is None else str(v)
     # ISO 8601 timestamps (e.g. 2026-06-08T14:30:00Z) are safe unquoted in YAML
     if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$", s):
         return s
-    if s == "" or re.search(r'[:#\[\]{}",]', s) or s != s.strip():
+    if force_quote or s == "" or re.search(r'[:#\[\]{}",]', s) or s != s.strip():
         return '"' + s.replace('"', '\\"') + '"'
     return s
 
 
-def _write_note(path: str, frontmatter: dict, body: str) -> str:
+def _write_note(path: str, frontmatter: dict, body: str,
+                quoted_keys: set | None = None) -> str:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     lines = ["---"]
     for k, v in frontmatter.items():
-        lines.append(f"{k}: {_yaml_value(v)}")
+        fq = quoted_keys is not None and k in quoted_keys
+        lines.append(f"{k}: {_yaml_value(v, force_quote=fq)}")
     lines += ["---", "", body.rstrip() + "\n"]
     with open(path, "w") as f:
         f.write("\n".join(lines))
@@ -61,3 +63,14 @@ def write_activity(vault: str, skill: str, status: str, summary: str,
         fm["branch"] = branch
     name = f"{_stamp(when)}-{_slugify(skill)}.md"
     return _write_note(os.path.join(vault, CC, "activity", name), fm, summary)
+
+
+def write_idea(vault: str, title: str, text: str, source: str,
+               project: str = "", status: str = "new",
+               created: str | None = None) -> str:
+    created = created or _utcnow()
+    fm = {"type": "idea", "title": title, "status": status,
+          "source": source, "project": project, "created": created}
+    name = f"{_stamp(created)}-{_slugify(title)}.md"
+    return _write_note(os.path.join(vault, CC, "ideas", name), fm, text,
+                       quoted_keys={"title"})

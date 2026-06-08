@@ -40,3 +40,18 @@ def test_write_activity_with_branch(tmp_path):
                              "built streak counter", when="2026-06-08T14:30:00Z",
                              branch="bot/streak-counter")
     assert 'branch: bot/streak-counter' in open(p).read()
+
+
+def test_write_idea(tmp_path):
+    p = notes.write_idea(str(tmp_path), "Add a streak counter to Nexum",
+                         "It should track consecutive workout days.",
+                         source="discord", project="nexum",
+                         created="2026-06-08T14:32:00Z")
+    assert p.endswith("command-center/ideas/2026-06-08-1432-add-a-streak-counter-to-nexum.md")
+    c = open(p).read()
+    assert "type: idea" in c
+    assert 'title: "Add a streak counter to Nexum"' in c
+    assert "status: new" in c
+    assert "source: discord" in c
+    assert "project: nexum" in c
+    assert "consecutive workout days" in c
