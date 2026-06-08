@@ -57,14 +57,15 @@ export interface StatusCounts {
   agents: number;
 }
 
-// The 4 foundational OS domains. Additional wiki folders exist for note-storage
-// (school, football, bible-study, side-projects, personal-ops, consulting, ai-systems)
-// but are not dashboard-rendered. raw-triage skill routes notes there as needed.
+// The foundational OS domains rendered as dashboard columns. Additional wiki folders
+// exist for note-storage (school, football, bible-study, side-projects, personal-ops,
+// consulting, ai-systems) but are not dashboard-rendered. raw-triage routes notes there.
 export const DOMAINS = [
   'MEMORY',
   'PRODUCTIVITY',
   'NEXUM',
   'GROWTH & BUSINESS',
+  'POKEMON',
 ] as const;
 
 export type Domain = (typeof DOMAINS)[number];

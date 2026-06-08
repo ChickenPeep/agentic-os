@@ -1,0 +1,2 @@
+# Shell scripts run on the Mac (bash). Force LF so Windows CRLF never breaks them.
+*.sh text eol=lf

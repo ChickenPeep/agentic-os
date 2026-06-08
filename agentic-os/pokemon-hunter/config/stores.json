@@ -1,0 +1,18 @@
+{
+  "_note": "Fill in real store/club ids. priority = camp order (1 = hit first; Target opens earliest). Find Target store_id at target.com/store-locator; Best Buy storeId via the Best Buy API stores endpoint or the store page URL.",
+  "target": [
+    { "store_id": "TODO_FRANKLIN", "label": "Target - Franklin WI", "city": "Franklin", "priority": 1 },
+    { "store_id": "TODO_OSHKOSH", "label": "Target - Oshkosh WI", "city": "Oshkosh", "priority": 1 },
+    { "store_id": "TODO_GREENFIELD", "label": "Target - Greenfield WI", "city": "Greenfield", "priority": 1 }
+  ],
+  "bestbuy": [
+    { "store_id": "TODO_GREENFIELD", "label": "Best Buy - Greenfield WI", "city": "Greenfield", "priority": 2 },
+    { "store_id": "TODO_OSHKOSH", "label": "Best Buy - Oshkosh WI", "city": "Oshkosh", "priority": 2 }
+  ],
+  "walmart": [
+    { "store_id": "TODO_OSHKOSH", "label": "Walmart - Oshkosh WI", "city": "Oshkosh", "priority": 3 }
+  ],
+  "samsclub": [
+    { "club_id": "TODO_GREENDALE", "label": "Sams Club - Greendale WI", "city": "Greendale", "priority": 3 }
+  ]
+}
