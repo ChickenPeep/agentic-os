@@ -10,6 +10,8 @@ import json
 import re
 import sys
 
+# NOTE: inline-interpreter network calls (e.g. `python3 -c "import requests…"`) are out of scope
+# for this hook; the owner allowlist is the primary control for those vectors.
 # Bash command patterns that must be gated (denied; Claude is told to ask for approval).
 _DENY_PATTERNS = [
     r"\bgit\s+push\b",
@@ -18,13 +20,15 @@ _DENY_PATTERNS = [
     r"\bgit\s+(checkout|switch)\s+master\b",
     r"\blaunchctl\b",
     r"\bdeploy\.sh\b",
-    r"\bgh\s+(pr|release|repo)\s+(create|merge|edit)\b",
+    r"\bgh\s+(pr|release|repo|issue|gist|workflow|api|secret|variable)\b",
     r"\b(systemctl|service)\b",
 ]
 
 # Outbound-write network calls are gated; read-only GET fetches for research are allowed.
 _NETWORK_BIN = re.compile(r"\b(curl|wget|http|https)\b")
-_NETWORK_WRITE = re.compile(r"(-X\s*(POST|PUT|PATCH|DELETE)|--data|-d\s|--upload-file|-T\s)")
+_NETWORK_WRITE = re.compile(
+    r"(-X\s*(POST|PUT|PATCH|DELETE)|--data(-binary|-raw|-urlencode)?|-d[\s@'\"]|-F\b|--form|--upload-file|-T\s)"
+)
 
 _DENY_RE = [re.compile(p) for p in _DENY_PATTERNS]
 

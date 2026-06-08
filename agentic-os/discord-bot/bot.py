@@ -62,13 +62,14 @@ async def on_message(message: discord.Message):
     if not text:
         return
 
-    # Approval path.
-    if helpers.is_approval(text):
-        await _handle_approval(message)
-        return
-
-    async with _lock(message.channel.id):
-        await _handle_task(message, text)
+    lock = _lock(message.channel.id)
+    if lock.locked():
+        await message.channel.send("⏳ queued behind the current task…")
+    async with lock:
+        if helpers.is_approval(text):
+            await _handle_approval(message)
+        else:
+            await _handle_task(message, text)
 
 
 async def _handle_task(message: discord.Message, text: str):
@@ -78,12 +79,12 @@ async def _handle_task(message: discord.Message, text: str):
     except Exception as e:
         print(f"[idealog raw] {e}")
     started = idealog._utcnow()
-    run_id = idealog.log_run(started, "working", text)
+    run_id = await asyncio.to_thread(idealog.log_run, started, "running", text)
 
     rec = STATE.get(message.channel.id)
     session_id = rec.get("session_id") or str(uuid.uuid4())
     resume = bool(rec.get("session_id"))
-    branch = rec.get("branch") or (CFG["branch_prefix"] + helpers.slugify(text) or "bot/task")
+    branch = rec.get("branch") or (CFG["branch_prefix"] + (helpers.slugify(text) or "task"))
     STATE.update(message.channel.id, session_id=session_id, branch=branch)
 
     placeholder = await message.channel.send("🤔 on it…")
@@ -96,6 +97,7 @@ async def _handle_task(message: discord.Message, text: str):
         now = time.time()
         if now - last_edit["t"] >= CFG["progress_edit_min_interval_seconds"]:
             last_edit["t"] = now
+            # Future is intentionally not awaited — best-effort edit from the worker thread.
             asyncio.run_coroutine_threadsafe(
                 placeholder.edit(content=helpers.format_progress(progress, None)[:1900]),
                 client.loop,
@@ -103,23 +105,51 @@ async def _handle_task(message: discord.Message, text: str):
 
     try:
         runner.ensure_branch(VAULT, branch)
-        result = await asyncio.to_thread(
-            runner.run_claude, text,
-            session_id=session_id, resume=resume, cwd=VAULT,
-            settings_path=SETTINGS_PATH, model=CFG.get("model", ""),
-            timeout=CFG["claude_timeout_seconds"], on_progress=on_progress,
-        )
+
+        start_ts = time.time()
+        hb_stop = asyncio.Event()
+
+        async def _heartbeat():
+            while not hb_stop.is_set():
+                try:
+                    await asyncio.wait_for(hb_stop.wait(), timeout=CFG["heartbeat_seconds"])
+                except asyncio.TimeoutError:
+                    elapsed = int(time.time() - start_ts)
+                    try:
+                        await placeholder.edit(
+                            content=(helpers.format_progress(progress, None)[:1850]
+                                     + f"\n\n⏱️ {elapsed // 60}m{elapsed % 60}s")
+                        )
+                    except Exception:
+                        pass
+
+        hb_task = asyncio.create_task(_heartbeat())
+        try:
+            result = await asyncio.to_thread(
+                runner.run_claude, text,
+                session_id=session_id, resume=resume, cwd=VAULT,
+                settings_path=SETTINGS_PATH, model=CFG.get("model", ""),
+                timeout=CFG["claude_timeout_seconds"], on_progress=on_progress,
+            )
+        finally:
+            hb_stop.set()
+            await hb_task
+
     except Exception as e:
         await placeholder.edit(content=f"⚠️ run failed: {e}")
         if run_id:
-            idealog.update_run(run_id, "failed", str(e))
+            await asyncio.to_thread(idealog.update_run, run_id, "failure", str(e))
         return
 
     if result.session_id:
         STATE.update(message.channel.id, session_id=result.session_id)
 
-    diffstat = subprocess.run(["git", "-C", VAULT, "diff", "--stat", "main...HEAD"],
-                              capture_output=True, text=True).stdout.strip()
+    diff_proc = await asyncio.to_thread(
+        subprocess.run,
+        ["git", "-C", VAULT, "diff", "--stat", "main...HEAD"],
+        capture_output=True, text=True,
+    )
+    diffstat = diff_proc.stdout.strip()
     summary = result.final_text or "(no output)"
     footer = ""
     if diffstat:
@@ -128,7 +158,7 @@ async def _handle_task(message: discord.Message, text: str):
     final_msg = helpers.format_progress(progress, summary)[:1700] + footer
     await placeholder.edit(content=final_msg[:1990])
     if run_id:
-        idealog.update_run(run_id, "error" if result.is_error else "done", summary)
+        await asyncio.to_thread(idealog.update_run, run_id, "failure" if result.is_error else "success", summary)
 
 
 async def _handle_approval(message: discord.Message):
@@ -139,13 +169,19 @@ async def _handle_approval(message: discord.Message):
         return
     branch = pending["branch"]
     await message.channel.send(f"🚀 pushing `{branch}` and opening a PR…")
-    push = subprocess.run(["git", "-C", VAULT, "push", "-u", "origin", branch],
-                          capture_output=True, text=True)
+    push = await asyncio.to_thread(
+        subprocess.run,
+        ["git", "-C", VAULT, "push", "-u", "origin", branch],
+        capture_output=True, text=True,
+    )
     if push.returncode != 0:
         await message.channel.send(f"⚠️ push failed:\n```\n{push.stderr[-500:]}\n```")
         return
-    pr = subprocess.run(["gh", "pr", "create", "--fill", "--head", branch],
-                        cwd=VAULT, capture_output=True, text=True)
+    pr = await asyncio.to_thread(
+        subprocess.run,
+        ["gh", "pr", "create", "--fill", "--head", branch],
+        capture_output=True, text=True,
+    )
     STATE.clear_pending(message.channel.id)
     link = pr.stdout.strip() or "(PR created)"
     await message.channel.send(f"✅ shipped. {link}")

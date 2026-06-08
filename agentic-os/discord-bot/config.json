@@ -3,6 +3,5 @@
   "claude_timeout_seconds": 1200,
   "heartbeat_seconds": 45,
   "progress_edit_min_interval_seconds": 2,
-  "model": "",
-  "approval_words": ["ship it", "ship", "go", "do it", "approved"]
+  "model": ""
 }

