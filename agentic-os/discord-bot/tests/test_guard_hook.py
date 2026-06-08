@@ -41,3 +41,28 @@ def test_external_send_denied_but_get_allowed():
 
 def test_unknown_bash_allowed_by_default():
     assert D("Bash", command="python3 -m pytest -q")["allow"] is True
+
+
+import json
+import subprocess
+import sys
+import os
+
+HOOK = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "guard_hook.py")
+
+
+def _run_hook(event: dict) -> dict:
+    p = subprocess.run([sys.executable, HOOK], input=json.dumps(event),
+                       capture_output=True, text=True, timeout=10)
+    return json.loads(p.stdout)
+
+
+def test_cli_allows_write():
+    out = _run_hook({"tool_name": "Write", "tool_input": {"file_path": "/x"}})
+    assert out["hookSpecificOutput"]["permissionDecision"] == "allow"
+
+
+def test_cli_denies_push():
+    out = _run_hook({"tool_name": "Bash", "tool_input": {"command": "git push origin x"}})
+    assert out["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert "ship it" in out["hookSpecificOutput"]["permissionDecisionReason"].lower()
