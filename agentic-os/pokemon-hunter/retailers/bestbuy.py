@@ -51,24 +51,10 @@ def check(product: dict, stores: list[dict], client: httpx.Client) -> list[dict]
             })
         return results
 
-    store_ids = [str(s.get("store_id", "")) for s in stores if not str(s.get("store_id", "")).startswith("TODO")]
-    by_store_avail: dict[str, bool] = {}
-    if store_ids:
-        store_filter = " or ".join(f"storeId={sid}" for sid in store_ids)
-        endpoint = f"{BASE}/products/{sku}/stores.json"
-        params = {"apiKey": api_key, "storeId": f"in({','.join(store_ids)})", "format": "json"}
-        try:
-            resp = client.get(endpoint, params=params, headers=HEADERS, timeout=15)
-            if resp.status_code in (401, 403):
-                by_store_avail = {sid: None for sid in store_ids}  # signal auth issue below
-            else:
-                resp.raise_for_status()
-                data = resp.json()
-                for s in data.get("stores", []):
-                    by_store_avail[str(s.get("storeId"))] = bool(s.get("lowStock", True) or s.get("inStoreAvailability", False)) or True
-        except (httpx.HTTPError, ValueError):
-            by_store_avail = {}
-
+    # The Stores API only returns stores that actually carry the product in stock,
+    # so presence in the response == available. Query per store (unambiguous; the
+    # path endpoint takes a single storeId) and treat absence as OUT_OF_STOCK.
+    endpoint = f"{BASE}/products/{sku}/stores.json"
     for store in stores:
         sid = str(store.get("store_id", ""))
         base = {
@@ -78,12 +64,36 @@ def check(product: dict, stores: list[dict], client: httpx.Client) -> list[dict]
             "price": None,
             "url": url,
         }
-        if sid.startswith("TODO") or not sid:
+        if not sid or sid.startswith("TODO"):
             results.append({**base, "in_stock": False, "raw_status": "error:no_store_id"})
             continue
-        avail = by_store_avail.get(sid)
-        if avail is None:
-            results.append({**base, "in_stock": False, "raw_status": "error:auth_or_missing"})
+
+        params = {"apiKey": api_key, "storeId": sid, "format": "json"}
+        try:
+            resp = client.get(endpoint, params=params, headers=HEADERS, timeout=15)
+            if resp.status_code in (401, 403):
+                results.append({**base, "in_stock": False, "raw_status": "error:auth"})
+                continue
+            if resp.status_code == 404:
+                # SKU not carried / unknown to the API: not an error, just no stock.
+                results.append({**base, "in_stock": False, "raw_status": "OUT_OF_STOCK"})
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+        except httpx.HTTPError as e:
+            results.append({**base, "in_stock": False, "raw_status": f"error:{type(e).__name__}"})
+            continue
+        except ValueError:
+            results.append({**base, "in_stock": False, "raw_status": "error:bad_json"})
+            continue
+
+        match = next(
+            (s for s in (data.get("stores") or []) if str(s.get("storeId")) == sid),
+            None,
+        )
+        if match is None:
+            results.append({**base, "in_stock": False, "raw_status": "OUT_OF_STOCK"})
         else:
-            results.append({**base, "in_stock": bool(avail), "raw_status": "IN_STOCK" if avail else "OUT_OF_STOCK"})
+            raw = "IN_STOCK_LOW" if match.get("lowStock") else "IN_STOCK"
+            results.append({**base, "in_stock": True, "raw_status": raw})
     return results

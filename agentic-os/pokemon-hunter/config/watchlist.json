@@ -5,7 +5,7 @@
     "product_type": "etb",
     "retailers": {
       "target": { "tcin": "88897899" },
-      "bestbuy": { "sku": "6571710" }
+      "bestbuy": { "sku": "6548366" }
     },
     "active": true
   },
@@ -14,7 +14,8 @@
     "name": "Pokemon Prismatic Evolutions Elite Trainer Box",
     "product_type": "etb",
     "retailers": {
-      "target": { "tcin": "1011206804" }
+      "target": { "tcin": "1011206804" },
+      "bestbuy": { "sku": "6606082" }
     },
     "active": true
   }
