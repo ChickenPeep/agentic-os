@@ -3,7 +3,10 @@ credentials/
 raw/
 wiki/
 output/
-.obsidian/
+.obsidian/*
+!.obsidian/snippets/
+.obsidian/snippets/*
+!.obsidian/snippets/command-center.css
 agentic-os-Vault/
 
 # macOS

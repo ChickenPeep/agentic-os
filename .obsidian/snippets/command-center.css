@@ -1,0 +1,47 @@
+/* command-center.css — Palette A · Midnight Focus.
+   Scoped to notes with `cssclasses: [command-center]`. */
+.command-center {
+  --cc-bg:#0D1117; --cc-surface:#161B22; --cc-line:rgba(255,255,255,.07);
+  --cc-text:#E6EDF3; --cc-muted:#8B949E; --cc-accent:#2F81F7;
+  --cc-ok:#3FB950; --cc-warn:#D29922; --cc-danger:#F85149;
+}
+.markdown-preview-view.command-center {
+  background:var(--cc-bg); color:var(--cc-text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+}
+.command-center h1 { letter-spacing:-0.02em; }
+.command-center h2 {
+  font-size:.78rem; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--cc-muted); border:0; margin:1.7em 0 .6em;
+}
+.command-center table.dataview, .command-center .table-view-table {
+  width:100%; border-collapse:separate; border-spacing:0; font-size:.86rem;
+  background:var(--cc-surface); border:1px solid var(--cc-line);
+  border-radius:12px; overflow:hidden;
+}
+.command-center .table-view-table th {
+  background:transparent; color:var(--cc-muted); text-align:left;
+  font-weight:600; text-transform:uppercase; font-size:.68rem; letter-spacing:.06em;
+  padding:10px 14px; border-bottom:1px solid var(--cc-line);
+}
+.command-center .table-view-table td {
+  padding:10px 14px; border-bottom:1px solid var(--cc-line); color:var(--cc-text);
+}
+.command-center .table-view-table tr:last-child td { border-bottom:0; }
+.command-center a { color:var(--cc-accent); text-decoration:none; }
+.command-center .cc-pill {
+  display:inline-block; padding:2px 10px; border-radius:999px;
+  font-size:.72rem; font-weight:600; line-height:1.5;
+}
+.command-center .cc-success, .command-center .cc-done {
+  background:color-mix(in srgb,var(--cc-ok) 18%,transparent); color:var(--cc-ok);
+}
+.command-center .cc-staged, .command-center .cc-doing {
+  background:color-mix(in srgb,var(--cc-accent) 18%,transparent); color:var(--cc-accent);
+}
+.command-center .cc-new, .command-center .cc-running {
+  background:color-mix(in srgb,var(--cc-warn) 20%,transparent); color:var(--cc-warn);
+}
+.command-center .cc-failure {
+  background:color-mix(in srgb,var(--cc-danger) 20%,transparent); color:var(--cc-danger);
+}
