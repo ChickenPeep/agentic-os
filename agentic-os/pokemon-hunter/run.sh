@@ -1,8 +1,8 @@
 #!/bin/bash
 # launchd entrypoint for pokemon.check-stock.
-# Sources secrets, runs one check tick, and logs a Supabase `runs` row only when
-# noteworthy (an alert fired, or errors occurred) plus one hourly heartbeat, so the
-# dashboard RunHistory stays readable under a 5-minute cadence.
+# Sources secrets, runs one check tick, and writes a command-center activity note
+# only when noteworthy (an alert fired, or errors occurred) plus one hourly heartbeat,
+# so the Obsidian command-center activity log stays readable under a 5-minute cadence.
 #
 # Deployed location (mirrors mac-server convention):
 #   ~/agentic-os-server/pokemon-hunter/run.sh

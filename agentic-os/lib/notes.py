@@ -36,9 +36,33 @@ def _yaml_value(v, force_quote: bool = False) -> str:
     # ISO 8601 timestamps (e.g. 2026-06-08T14:30:00Z) are safe unquoted in YAML
     if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$", s):
         return s
-    if force_quote or s == "" or re.search(r'[:#\[\]{}",]', s) or s != s.strip():
-        return '"' + s.replace('"', '\\"') + '"'
+    # Newlines, carriage-returns, and backslashes must always be double-quoted.
+    needs_newline_escape = bool(re.search(r"[\n\r\\]", s))
+    if force_quote or needs_newline_escape or s == "" or re.search(r'[:#\[\]{}",]', s) or s != s.strip():
+        # Escape backslashes first (before escaping quotes, so \ doesn't double-escape).
+        escaped = s.replace("\\", "\\\\")
+        # Escape double-quotes.
+        escaped = escaped.replace('"', '\\"')
+        # Escape newlines/carriage-returns to literal sequences inside the scalar.
+        escaped = escaped.replace("\r\n", "\\n")
+        escaped = escaped.replace("\n", "\\n")
+        escaped = escaped.replace("\r", "\\r")
+        return '"' + escaped + '"'
     return s
+
+
+def _unique_path(path: str) -> str:
+    """Return *path* unchanged if it doesn't exist; otherwise insert -2, -3, ...
+    before the .md extension until a free slot is found."""
+    if not os.path.exists(path):
+        return path
+    base, ext = os.path.splitext(path)
+    n = 2
+    while True:
+        candidate = f"{base}-{n}{ext}"
+        if not os.path.exists(candidate):
+            return candidate
+        n += 1
 
 
 def _write_note(path: str, frontmatter: dict, body: str,
@@ -62,7 +86,8 @@ def write_activity(vault: str, skill: str, status: str, summary: str,
     if branch:
         fm["branch"] = branch
     name = f"{_stamp(when)}-{_slugify(skill)}.md"
-    return _write_note(os.path.join(vault, CC, "activity", name), fm, summary)
+    path = _unique_path(os.path.join(vault, CC, "activity", name))
+    return _write_note(path, fm, summary)
 
 
 def write_idea(vault: str, title: str, text: str, source: str,
@@ -72,8 +97,8 @@ def write_idea(vault: str, title: str, text: str, source: str,
     fm = {"type": "idea", "title": title, "status": status,
           "source": source, "project": project, "created": created}
     name = f"{_stamp(created)}-{_slugify(title)}.md"
-    return _write_note(os.path.join(vault, CC, "ideas", name), fm, text,
-                       quoted_keys={"title"})
+    path = _unique_path(os.path.join(vault, CC, "ideas", name))
+    return _write_note(path, fm, text, quoted_keys={"title"})
 
 
 def write_research(vault: str, title: str, body: str,
@@ -81,7 +106,8 @@ def write_research(vault: str, title: str, body: str,
     created = created or _utcnow()
     fm = {"type": "research", "title": title, "source": source, "created": created}
     name = f"{_stamp(created)}-{_slugify(title)}.md"
-    return _write_note(os.path.join(vault, CC, "research", name), fm, body)
+    path = _unique_path(os.path.join(vault, CC, "research", name))
+    return _write_note(path, fm, body)
 
 
 def _parse_frontmatter(text: str) -> dict:

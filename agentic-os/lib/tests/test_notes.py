@@ -1,3 +1,4 @@
+import os
 import re
 import notes
 
@@ -65,6 +66,56 @@ def test_write_research(tmp_path):
     assert "type: research" in c
     assert "source: deep-research" in c
     assert "thing one" in c
+
+
+# FIX 1: collision safety — two activities in the same minute get distinct paths
+def test_write_activity_same_minute_no_collision(tmp_path):
+    p1 = notes.write_activity(str(tmp_path), "pokemon.check-stock", "success",
+                              "first run", when="2026-06-08T14:30:10Z")
+    p2 = notes.write_activity(str(tmp_path), "pokemon.check-stock", "success",
+                              "second run", when="2026-06-08T14:30:55Z")
+    assert p1 != p2, "same-minute activities must produce distinct paths"
+    assert os.path.exists(p1), "first file must exist"
+    assert os.path.exists(p2), "second file must exist"
+    assert "first run" in open(p1).read()
+    assert "second run" in open(p2).read()
+    # The original filename (no suffix) goes to p1; p2 gets a -2 suffix
+    assert p1.endswith("2026-06-08-1430-pokemon-check-stock.md")
+    assert p2.endswith("2026-06-08-1430-pokemon-check-stock-2.md")
+
+
+# FIX 2: multiline frontmatter values stay in the --- block
+def test_multiline_summary_frontmatter_intact(tmp_path):
+    p = notes.write_activity(str(tmp_path), "pokemon.check-stock", "success",
+                             "line one\nline two", when="2026-06-08T14:30:00Z")
+    content = open(p).read()
+    fm = notes._parse_frontmatter(content)
+    assert fm.get("status") == "success"
+    assert fm.get("skill") == "pokemon.check-stock"
+    # Raw frontmatter block must NOT contain a bare newline inside a value
+    end = content.find("\n---", 3)
+    fm_block = content[3:end]
+    # The literal escape sequence \n should appear (not a real newline in the value)
+    assert r"\n" in fm_block, "escaped \\n must appear in frontmatter"
+    # No bare newline inside the value (i.e. the summary line is fully on one line)
+    for line in fm_block.splitlines():
+        if line.startswith("summary:"):
+            assert "\n" not in line.split(":", 1)[1]
+
+
+# FIX 3: backslash in a value round-trips without invalid escape sequences
+def test_backslash_in_yaml_value(tmp_path):
+    p = notes.write_activity(str(tmp_path), "test.skill", "success",
+                             r"C:\Users\gabri\notes", when="2026-06-08T09:00:00Z")
+    content = open(p).read()
+    fm = notes._parse_frontmatter(content)
+    assert fm.get("status") == "success"
+    # The raw frontmatter summary line must have the backslash escaped (\\)
+    end = content.find("\n---", 3)
+    fm_block = content[3:end]
+    for line in fm_block.splitlines():
+        if line.startswith("summary:"):
+            assert "\\\\" in line or r"\\" in line
 
 
 def test_sync_skills(tmp_path):

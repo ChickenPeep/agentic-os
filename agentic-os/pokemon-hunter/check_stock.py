@@ -3,7 +3,7 @@
 
 Loops the watchlist x stores across all enabled retailers, alerts Discord on
 rising-edge in-stock transitions, updates dedup state, and prints a one-line JSON
-summary (consumed by run.sh for Supabase run logging).
+summary (consumed by run.sh to write a command-center activity note).
 
 Designed to be invoked by launchd on a schedule (it does one pass then exits).
 Run manually for testing:  python3 check_stock.py
@@ -122,7 +122,7 @@ def main() -> int:
     if os.environ.get("HUNTER_NO_JITTER") != "1":
         time.sleep(random.uniform(0, 30))
     summary = run_tick()
-    # Single-line JSON summary on stdout for run.sh / Supabase logging.
+    # Single-line JSON summary on stdout for run.sh to drive command-center activity logging.
     print(json.dumps(summary))
     # Exit non-zero only on total failure (nothing checked), so launchd logs stay clean.
     return 0 if summary["checked"] > 0 else 1
