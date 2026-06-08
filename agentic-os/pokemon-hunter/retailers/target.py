@@ -13,7 +13,10 @@ import os
 
 import httpx
 
-FULFILLMENT_URL = "https://redsky.target.com/redsky_aggregations/v1/web/pdp_fulfillment_v1"
+# NOTE: Target retired pdp_fulfillment_v1 (now returns HTTP 410 Gone). The current
+# store-level fulfillment operation is product_fulfillment_v1 (same response shape:
+# data.product.fulfillment.store_options[].{in_store_only,order_pickup,ship_to_store}).
+FULFILLMENT_URL = "https://redsky.target.com/redsky_aggregations/v1/web/product_fulfillment_v1"
 
 # Known anonymous web key. Rotates occasionally -> override with TARGET_REDSKY_KEY.
 DEFAULT_KEY = "9f36aeafbe60771e321a7cc95a78140772ab3e96"

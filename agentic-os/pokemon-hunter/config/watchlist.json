@@ -4,7 +4,7 @@
     "name": "Pokemon SV 151 Elite Trainer Box",
     "product_type": "etb",
     "retailers": {
-      "target": { "tcin": "88897373" },
+      "target": { "tcin": "88897899" },
       "bestbuy": { "sku": "6571710" }
     },
     "active": true
@@ -14,7 +14,7 @@
     "name": "Pokemon Prismatic Evolutions Elite Trainer Box",
     "product_type": "etb",
     "retailers": {
-      "target": { "tcin": "94300069" }
+      "target": { "tcin": "1011206804" }
     },
     "active": true
   }

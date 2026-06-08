@@ -1,13 +1,13 @@
 {
-  "_note": "Fill in real store/club ids. priority = camp order (1 = hit first; Target opens earliest). Find Target store_id at target.com/store-locator; Best Buy storeId via the Best Buy API stores endpoint or the store page URL.",
+  "_note": "Store/club ids. priority = camp order (1 = hit first; Target opens earliest). Target ids = RedSky location_id; Best Buy ids = numeric storeId from stores.bestbuy.com URL. Walmart/Sams left as TODO (those retailer modules are not built yet). Note: there is no Target in Greenfield WI; nearest is West Allis (2199), on the Greenfield border.",
   "target": [
-    { "store_id": "TODO_FRANKLIN", "label": "Target - Franklin WI", "city": "Franklin", "priority": 1 },
-    { "store_id": "TODO_OSHKOSH", "label": "Target - Oshkosh WI", "city": "Oshkosh", "priority": 1 },
-    { "store_id": "TODO_GREENFIELD", "label": "Target - Greenfield WI", "city": "Greenfield", "priority": 1 }
+    { "store_id": "2388", "label": "Target - Franklin WI", "city": "Franklin", "priority": 1 },
+    { "store_id": "807", "label": "Target - Oshkosh WI", "city": "Oshkosh", "priority": 1 },
+    { "store_id": "2199", "label": "Target - West Allis WI (nearest to Greenfield)", "city": "West Allis", "priority": 1 }
   ],
   "bestbuy": [
-    { "store_id": "TODO_GREENFIELD", "label": "Best Buy - Greenfield WI", "city": "Greenfield", "priority": 2 },
-    { "store_id": "TODO_OSHKOSH", "label": "Best Buy - Oshkosh WI", "city": "Oshkosh", "priority": 2 }
+    { "store_id": "25", "label": "Best Buy - Greenfield WI (Southridge)", "city": "Greenfield", "priority": 2 },
+    { "store_id": "1890", "label": "Best Buy - Oshkosh WI", "city": "Oshkosh", "priority": 2 }
   ],
   "walmart": [
     { "store_id": "TODO_OSHKOSH", "label": "Walmart - Oshkosh WI", "city": "Oshkosh", "priority": 3 }
