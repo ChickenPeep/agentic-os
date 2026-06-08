@@ -55,3 +55,13 @@ def test_write_idea(tmp_path):
     assert "source: discord" in c
     assert "project: nexum" in c
     assert "consecutive workout days" in c
+
+
+def test_write_research(tmp_path):
+    p = notes.write_research(str(tmp_path), "D3 football camps WI",
+                             "## Findings\n- thing one\n", created="2026-06-08T09:00:00Z")
+    assert p.endswith("command-center/research/2026-06-08-0900-d3-football-camps-wi.md")
+    c = open(p).read()
+    assert "type: research" in c
+    assert "source: deep-research" in c
+    assert "thing one" in c

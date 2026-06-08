@@ -74,3 +74,11 @@ def write_idea(vault: str, title: str, text: str, source: str,
     name = f"{_stamp(created)}-{_slugify(title)}.md"
     return _write_note(os.path.join(vault, CC, "ideas", name), fm, text,
                        quoted_keys={"title"})
+
+
+def write_research(vault: str, title: str, body: str,
+                   source: str = "deep-research", created: str | None = None) -> str:
+    created = created or _utcnow()
+    fm = {"type": "research", "title": title, "source": source, "created": created}
+    name = f"{_stamp(created)}-{_slugify(title)}.md"
+    return _write_note(os.path.join(vault, CC, "research", name), fm, body)
