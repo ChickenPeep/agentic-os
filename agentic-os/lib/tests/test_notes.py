@@ -65,3 +65,20 @@ def test_write_research(tmp_path):
     assert "type: research" in c
     assert "source: deep-research" in c
     assert "thing one" in c
+
+
+def test_sync_skills(tmp_path):
+    # fake a skill file under the dot-folder
+    skdir = tmp_path / "agentic-os" / ".claude" / "skills" / "pokemon"
+    skdir.mkdir(parents=True)
+    (skdir / "check-stock.md").write_text(
+        "---\nslug: pokemon.check-stock\ndomain: POKEMON\nname: check-stock\n"
+        "description: Polls stores for Pokemon stock.\ntype: routine\n---\nbody\n")
+    paths = notes.sync_skills(str(tmp_path))
+    assert len(paths) == 1
+    c = open(paths[0]).read()
+    assert paths[0].endswith("command-center/skills/pokemon.check-stock.md")
+    assert "type: skill" in c
+    assert "slug: pokemon.check-stock" in c
+    assert "domain: POKEMON" in c
+    assert "skill_type: routine" in c

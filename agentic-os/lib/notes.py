@@ -82,3 +82,33 @@ def write_research(vault: str, title: str, body: str,
     fm = {"type": "research", "title": title, "source": source, "created": created}
     name = f"{_stamp(created)}-{_slugify(title)}.md"
     return _write_note(os.path.join(vault, CC, "research", name), fm, body)
+
+
+def _parse_frontmatter(text: str) -> dict:
+    if not text.startswith("---"):
+        return {}
+    end = text.find("\n---", 3)
+    if end == -1:
+        return {}
+    out = {}
+    for line in text[3:end].strip("\n").splitlines():
+        if ":" in line:
+            k, v = line.split(":", 1)
+            out[k.strip()] = v.strip().strip('"')
+    return out
+
+
+def sync_skills(vault: str) -> list[str]:
+    src = os.path.join(vault, "agentic-os", ".claude", "skills")
+    written = []
+    for f in sorted(glob.glob(os.path.join(src, "**", "*.md"), recursive=True)):
+        fm = _parse_frontmatter(open(f).read())
+        slug = fm.get("slug")
+        if not slug:
+            continue
+        stub = {"type": "skill", "slug": slug, "domain": fm.get("domain", ""),
+                "name": fm.get("name", ""), "description": fm.get("description", ""),
+                "skill_type": fm.get("type", "")}
+        body = f"{fm.get('description', '')}\n\nSource: `{os.path.relpath(f, vault)}`"
+        written.append(_write_note(os.path.join(vault, CC, "skills", f"{slug}.md"), stub, body))
+    return written
