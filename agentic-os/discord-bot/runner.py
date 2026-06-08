@@ -52,3 +52,67 @@ def parse_stream_events(lines: Iterable[str]) -> ParsedRun:
                 out.session_id = ev["session_id"]
             out.is_error = bool(ev.get("is_error"))
     return out
+
+
+_BRIDGE_PROMPT = (
+    "You are reachable via Discord from Gabe's phone as the agentic-os command center. "
+    "Work is staged on the current git branch. You CANNOT push, merge to main, deploy, "
+    "restart services, spend money, or send external messages — a guard will block those. "
+    "When you need one, finish and stage your work, summarize what you did and the branch, "
+    "and tell Gabe to reply 'ship it' to approve. Be concise; you are talking to a phone."
+)
+
+
+def build_argv(prompt: str, *, session_id: str, resume: bool, settings_path: str,
+               model: str = "") -> list[str]:
+    argv = [
+        "claude", "-p", prompt,
+        "--output-format", "stream-json",
+        "--verbose",
+        "--settings", settings_path,
+        "--append-system-prompt", _BRIDGE_PROMPT,
+        "--permission-mode", "acceptEdits",
+    ]
+    if resume:
+        argv += ["--resume", session_id]
+    else:
+        argv += ["--session-id", session_id]
+    if model:
+        argv += ["--model", model]
+    return argv
+
+
+def ensure_branch(cwd: str, branch: str) -> None:
+    """Checkout an existing bot branch or create it from the current HEAD."""
+    existing = subprocess.run(["git", "-C", cwd, "rev-parse", "--verify", branch],
+                              capture_output=True, text=True)
+    if existing.returncode == 0:
+        subprocess.run(["git", "-C", cwd, "checkout", branch], check=True,
+                       capture_output=True, text=True)
+    else:
+        subprocess.run(["git", "-C", cwd, "checkout", "-b", branch], check=True,
+                       capture_output=True, text=True)
+
+
+def run_claude(prompt: str, *, session_id: str, resume: bool, cwd: str,
+               settings_path: str, model: str = "", timeout: int = 1200,
+               on_progress: Optional[Callable[[str], None]] = None) -> ParsedRun:
+    argv = build_argv(prompt, session_id=session_id, resume=resume,
+                      settings_path=settings_path, model=model)
+    proc = subprocess.Popen(argv, cwd=cwd, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, text=True, bufsize=1)
+    captured: list[str] = []
+    try:
+        for line in proc.stdout:  # streams as Claude emits events
+            captured.append(line)
+            partial = parse_stream_events(captured)
+            if on_progress and partial.progress:
+                on_progress(partial.progress[-1])
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        run = parse_stream_events(captured)
+        run.is_error = True
+        run.final_text = (run.final_text + "\n\n[aborted: exceeded time limit]").strip()
+        return run
+    return parse_stream_events(captured)
