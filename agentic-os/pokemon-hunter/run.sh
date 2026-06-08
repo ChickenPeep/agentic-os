@@ -44,23 +44,9 @@ if [ ! -f "$HEARTBEAT_FILE" ] || [ "$(( $(date +%s) - $(stat -f %m "$HEARTBEAT_F
   mkdir -p "$DIR/data" && touch "$HEARTBEAT_FILE"
 fi
 
-if [ "$NOTEWORTHY" -eq 1 ] && [ -n "${SUPABASE_URL:-}" ] && [ -n "${POKEMON_CHECK_STOCK_SKILL_ID:-}" ]; then
+if [ "$NOTEWORTHY" -eq 1 ]; then
   STATUS="success"; [ "$EXIT" -ne 0 ] && STATUS="failure"
-  # Escape the summary for embedding as a JSON string value.
-  OUT=$(printf '%s' "$SUMMARY" | python3 -c "import sys,json;print(json.dumps(sys.stdin.read()))")
-  curl -s -X POST "$SUPABASE_URL/rest/v1/runs" \
-    -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-    -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-    -H "Content-Type: application/json" \
-    -H "Prefer: return=minimal" \
-    -d "{\"skill_id\":\"$POKEMON_CHECK_STOCK_SKILL_ID\",\"started_at\":\"$STARTED_AT\",\"ended_at\":\"$ENDED_AT\",\"status\":\"$STATUS\",\"output\":$OUT,\"triggered_by\":\"cron\",\"host\":\"mac\"}" >/dev/null
-  # bump skill last_run_at; run_count increment is best-effort via a SQL function if present
-  curl -s -X PATCH "$SUPABASE_URL/rest/v1/skills?slug=eq.pokemon.check-stock" \
-    -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-    -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-    -H "Content-Type: application/json" \
-    -H "Prefer: return=minimal" \
-    -d "{\"last_run_at\":\"$ENDED_AT\"}" >/dev/null
+  VAULT_PATH="$MAC_VAULT" python3 "$DIR/log_activity.py" "$STATUS" "$SUMMARY" || true
 fi
 
 exit 0
