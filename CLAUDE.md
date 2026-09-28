@@ -37,7 +37,7 @@ agentic-os-vault/
 │   ├── _master-index.md       ← entry point, updated after every wiki write
 │   ├── memory/                ← OS domain
 │   ├── productivity/          ← OS domain
-│   ├── nexum/                 ← OS domain
+│   ├── nexum/                 ← retired 2026-09-28: Nexum notes go to the Nexum brain vault (see below)
 │   ├── growth-business/       ← OS domain
 │   ├── personal/              ← context-dump output (reference for all skills)
 │   ├── consulting/            ← note-storage only
@@ -95,3 +95,8 @@ Mac mini is the canonical host for all skills and routines. Only use n8n cloud c
 - n8n cloud: `https://gabrieltorres18.app.n8n.cloud`
 - GitHub: `https://github.com/ChickenPeep/agentic-os`
 - Dashboard: Cloudflare Pages (auto-deploy from GitHub)
+
+## Nexum brain (since 2026-09-28)
+
+Nexum has its own Obsidian vault: `/Users/gabri/Library/Mobile Documents/iCloud~md~obsidian/Documents/Nexum`
+(opens on iPhone too). Anything about Nexum goes into its `Inbox/`; `memory.raw-triage` routes there.

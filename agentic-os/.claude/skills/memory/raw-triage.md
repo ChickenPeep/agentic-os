@@ -48,7 +48,7 @@ Route to a PRIMARY domain when content fits OR when classification is ambiguous.
 
 - MEMORY -> wiki/memory/ : meta-level notes about how Gabriel organizes information, the agentic-os system itself, vault structure
 - PRODUCTIVITY -> wiki/productivity/ : tools, workflows, or techniques for being more productive in general
-- NEXUM -> wiki/nexum/ : D3 football performance tracking platform, Supabase schema for Nexum, Hudl integration, play tracking, stat apps
+- NEXUM -> **the Nexum brain's Inbox, not wiki/nexum/** (see "Nexum notes" below) : anything about the Nexum app -- features, coaches and athletes using it, UW-Oshkosh as a customer, bugs, ideas for the product
 - GROWTH & BUSINESS -> wiki/growth-business/ : daily learning, idea generation, consulting prep, sales/outreach, small business consulting, AI-building notes, Nexum GTM strategy
 
 ### SECONDARY domains (note-storage folders — route here ONLY when content is unambiguously about that area)
@@ -62,6 +62,14 @@ Route to a SECONDARY domain only when content clearly and exclusively belongs th
 - PERSONAL OPS -> wiki/personal-ops/ : personal productivity, time management, life organization, habits, routines (if not clearly PRODUCTIVITY)
 - CONSULTING -> wiki/consulting/ : campus AI consulting at UW Oshkosh — Copilot/Gemini rollout, faculty workshops, DLP, M365, meetings with university staff (distinct from GROWTH & BUSINESS consulting prep)
 - AI SYSTEMS -> wiki/ai-systems/ : AI engineering knowledge, model behavior, prompt design, agentic architecture
+
+### Nexum notes (since 2026-09-28)
+
+Nexum has its own Obsidian vault, the Nexum brain, at
+`/Users/gabri/Library/Mobile Documents/iCloud~md~obsidian/Documents/Nexum`. For a file classified NEXUM,
+do NOT run Step 3. Instead copy it unchanged into that vault's `Inbox/` (keep the file name; add a
+`-2` suffix if the name is taken) and then archive the raw file exactly as Step 3 would. Nexum's own
+Claude sessions file the brain's Inbox. Report it as `routed to Nexum brain`.
 
 High confidence = file clearly belongs to ONE domain. Low confidence = could plausibly belong to 2+ domains, or matches none well.
 
